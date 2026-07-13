@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /usr/local/lib/netmonitor/config.sh
+load_config
+
 DB="/var/lib/netmonitor/netmonitor.db"
 
 GREEN="\033[32m"
@@ -12,6 +15,9 @@ echo
 echo "=========================================================="
 echo "                 NetMonitor Status"
 echo "=========================================================="
+echo
+printf "%-10s %s\n" "Customer:" "$CUSTOMER"
+printf "%-10s %s\n" "Site:" "$SITE"
 echo
 
 sqlite3 "$DB" <<EOF |

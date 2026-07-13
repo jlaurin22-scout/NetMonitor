@@ -1,6 +1,29 @@
 #!/bin/bash
 
 CONFIG="/etc/netmonitor/netmonitor.json"
+SERVICE="netmonitor.service"
+
+NETWORK_INFO=$(python3 <<'EOF'
+import json
+import sys
+
+sys.path.insert(0, "/usr/local/lib/netmonitor/engine")
+
+from inventory.network import detect
+
+print(json.dumps(detect()))
+EOF
+)
+
+INTERFACE=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['interface'])")
+IP=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['ip'])")
+PREFIX=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['prefix'])")
+GATEWAY=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['gateway'])")
+NETWORK=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['network'])")
+DNS1=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['dns'][0])")
+DNS2=$(echo "$NETWORK_INFO" | python3 -c "import sys,json; print(json.load(sys.stdin)['dns'][1])")
+
+clear
 
 echo
 echo "========================================"
@@ -11,77 +34,35 @@ echo
 read -p "Customer Name : " CUSTOMER
 read -p "Site          : " SITE
 
-read -p "Static IP     : " IP
-read -p "Prefix        : " PREFIX
-read -p "Gateway       : " GATEWAY
+echo
+echo "Detected Network"
+echo "----------------"
+echo "Interface : $INTERFACE"
+echo "IP        : $IP"
+echo "Prefix    : /$PREFIX"
+echo "Gateway   : $GATEWAY"
+echo "Network   : $NETWORK"
+echo "DNS 1     : $DNS1"
+echo "DNS 2     : $DNS2"
+echo
 
-read -p "DNS 1         : " DNS1
-read -p "DNS 2         : " DNS2
+read -p "Use these settings? (Y/N): " ANSWER
 
-DEVICE_JSON=""
-
-while true
-do
+if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
     echo
-    read -p "Add Device (Y/N): " ANSWER
+    echo "Setup cancelled."
+    exit 0
+fi
 
-    if [[ "$ANSWER" != "Y" && "$ANSWER" != "y" ]]; then
-        break
-    fi
-
-    echo
-    read -p "Device Name : " DEVICENAME
-
-    echo
-    echo "Device Type"
-    echo "-----------"
-    echo "1) Internet Radio"
-    echo "2) NAS"
-    echo "3) Switch"
-    echo "4) Printer"
-    echo "5) Access Point"
-    echo "6) Camera"
-    echo "7) Server"
-    echo "8) Workstation"
-    echo "9) Other"
-    echo
-
-    read -p "Choice : " TYPE
-
-    case "$TYPE" in
-        1) DEVICETYPE="radio" ;;
-        2) DEVICETYPE="nas" ;;
-        3) DEVICETYPE="switch" ;;
-        4) DEVICETYPE="printer" ;;
-        5) DEVICETYPE="accesspoint" ;;
-        6) DEVICETYPE="camera" ;;
-        7) DEVICETYPE="server" ;;
-        8) DEVICETYPE="workstation" ;;
-        *) DEVICETYPE="other" ;;
-    esac
-
-    read -p "Device IP   : " DEVICEIP
-
-    if [ -n "$DEVICE_JSON" ]; then
-        DEVICE_JSON+=","
-    fi
-
-    DEVICE_JSON+="
-        {
-            \"name\": \"$DEVICENAME\",
-            \"type\": \"$DEVICETYPE\",
-            \"ip\": \"$DEVICEIP\"
-        }"
-done
-
-cat > /tmp/netmonitor.json << EOF
+cat >/tmp/netmonitor.json <<EOF
 {
-    "version": "0.2.0",
+    "version": "0.4.0",
 
     "customer": "$CUSTOMER",
     "site": "$SITE",
 
     "network": {
+        "interface": "$INTERFACE",
         "ip": "$IP",
         "prefix": $PREFIX,
         "gateway": "$GATEWAY",
@@ -91,15 +72,65 @@ cat > /tmp/netmonitor.json << EOF
         ]
     },
 
-    "devices": [
-$DEVICE_JSON
-    ],
+    "devices": [],
 
     "tailscale": true
 }
 EOF
 
-sudo mv /tmp/netmonitor.json "$CONFIG"
+mv /tmp/netmonitor.json "$CONFIG"
 
 echo
-echo "Configuration saved."
+echo "Initializing database..."
+
+python3 <<EOF
+import sys
+
+sys.path.insert(0, "/usr/local/lib/netmonitor/engine")
+
+from database import initialize
+
+initialize()
+EOF
+
+#
+# Give ownership to the service account
+#
+chown scout:scout /var/lib/netmonitor/netmonitor.db
+chmod 664 /var/lib/netmonitor/netmonitor.db
+
+echo "Database initialized."
+
+echo
+echo "Starting NetMonitor service..."
+
+systemctl daemon-reload
+systemctl enable "$SERVICE" >/dev/null 2>&1
+systemctl restart "$SERVICE"
+
+sleep 2
+
+if systemctl is-active --quiet "$SERVICE"; then
+
+    echo "Service started successfully."
+
+else
+
+    echo
+    echo "ERROR: NetMonitor service failed to start."
+    echo
+    echo "Run:"
+    echo
+    echo "    systemctl status $SERVICE"
+    echo
+    exit 1
+
+fi
+
+echo
+echo "NetMonitor is ready."
+echo
+echo "Run:"
+echo
+echo "    nm status"
+echo

@@ -6,25 +6,39 @@ import subprocess
 
 def detect():
 
-    # Get interface address (includes prefix length)
+    interface_name = ""
+    ip = ""
+    network = None
+
+    #
+    # Get interface, IP address and network
+    #
     addr = subprocess.check_output(
         ["ip", "-o", "-f", "inet", "addr", "show"],
         text=True
     ).splitlines()
 
-    ip = ""
-    network = None
-
     for line in addr:
-        if "scope global" in line:
-            cidr = line.split()[3]          # e.g. 192.168.75.29/24
-            interface = ipaddress.ip_interface(cidr)
 
-            ip = str(interface.ip)
-            network = interface.network
-            break
+        if "scope global" not in line:
+            continue
 
+        fields = line.split()
+
+        interface_name = fields[1]
+
+        cidr = fields[3]
+
+        interface = ipaddress.ip_interface(cidr)
+
+        ip = str(interface.ip)
+        network = interface.network
+
+        break
+
+    #
     # Get default gateway
+    #
     gateway = ""
 
     routes = subprocess.check_output(
@@ -33,15 +47,27 @@ def detect():
     ).splitlines()
 
     for line in routes:
+
         if line.startswith("default"):
+
             gateway = line.split()[2]
             break
 
+    #
+    # Use sensible default DNS servers
+    #
+    dns = [
+        gateway,
+        "1.1.1.1"
+    ]
+
     return {
+        "interface": interface_name,
         "ip": ip,
         "gateway": gateway,
         "network": str(network),
         "prefix": network.prefixlen,
+        "dns": dns
     }
 
 
@@ -52,8 +78,11 @@ if __name__ == "__main__":
     print()
     print("Detected Network")
     print("----------------")
-    print(f"IP       : {info['ip']}")
-    print(f"Gateway  : {info['gateway']}")
-    print(f"Network  : {info['network']}")
-    print(f"Prefix   : /{info['prefix']}")
+    print(f"Interface : {info['interface']}")
+    print(f"IP        : {info['ip']}")
+    print(f"Gateway   : {info['gateway']}")
+    print(f"Network   : {info['network']}")
+    print(f"Prefix    : /{info['prefix']}")
+    print(f"DNS 1     : {info['dns'][0]}")
+    print(f"DNS 2     : {info['dns'][1]}")
     print()
