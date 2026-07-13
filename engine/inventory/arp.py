@@ -23,11 +23,10 @@ def get_neighbors():
         if len(parts) < 5:
             continue
 
-        ip = parts[0]
-
         if "lladdr" not in parts:
             continue
 
+        ip = parts[0]
         mac = parts[parts.index("lladdr") + 1].upper()
 
         neighbors[ip] = mac
@@ -35,7 +34,20 @@ def get_neighbors():
     return neighbors
 
 
-if __name__ == "__main__":
+#
+# Cache the ARP table once per scan.
+#
+_NEIGHBORS = None
 
-    for ip, mac in sorted(get_neighbors().items()):
-        print(f"{ip:15} {mac}")
+
+def enrich(device):
+    """
+    Populate the MAC address of a device.
+    """
+
+    global _NEIGHBORS
+
+    if _NEIGHBORS is None:
+        _NEIGHBORS = get_neighbors()
+
+    device.mac = _NEIGHBORS.get(device.ip, "")

@@ -1,35 +1,46 @@
+#!/usr/bin/env python3
+
 import ipaddress
+import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def ping(ip):
+    """
+    Ping a host once.
+
+    Returns:
+        (alive, response_time)
+    """
+
     result = subprocess.run(
         ["ping", "-c", "1", "-W", "1", str(ip)],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        capture_output=True,
+        text=True
     )
-    return result.returncode == 0
+
+    if result.returncode != 0:
+        return False, None
+
+    match = re.search(r"time=([0-9.]+)", result.stdout)
+
+    if match:
+        return True, float(match.group(1))
+
+    return True, None
 
 
 def scan_network(network):
-    """
-    Scan a network and return a list of responding hosts.
-
-    Example:
-        ['192.168.1.1',
-         '192.168.1.15',
-         '192.168.1.27']
-    """
 
     net = ipaddress.ip_network(network, strict=False)
 
-    alive = []
+    devices = []
 
     with ThreadPoolExecutor(max_workers=100) as pool:
 
         futures = {
-            pool.submit(ping, ip): str(ip)
+            pool.submit(ping, ip): ip
             for ip in net.hosts()
         }
 
@@ -38,9 +49,23 @@ def scan_network(network):
             ip = futures[future]
 
             try:
-                if future.result():
-                    alive.append(ip)
+                alive, response = future.result()
+
+                if alive:
+                    devices.append({
+                        "ip": ip,
+                        "response": response
+                    })
+
             except Exception:
                 pass
 
-    return sorted(alive)
+    devices.sort(key=lambda d: d["ip"])
+
+    return [
+        {
+            "ip": str(device["ip"]),
+            "response": device["response"]
+        }
+        for device in devices
+    ]
