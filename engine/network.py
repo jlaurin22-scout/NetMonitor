@@ -2,6 +2,7 @@
 
 import socket
 import subprocess
+import dns.resolver
 
 
 def ping(host):
@@ -24,15 +25,31 @@ def dns_server_reachable(server):
 
     return ping(server)
 
-
-def dns_lookup(hostname):
+def dns_lookup(server, hostname):
 
     try:
 
-        socket.gethostbyname(hostname)
+        resolver = dns.resolver.Resolver(configure=False)
+        resolver.nameservers = [server]
+        resolver.timeout = 2
+        resolver.lifetime = 2
 
-        return True
+        answer = resolver.resolve(hostname)
 
-    except Exception:
+        return True, f"Resolved in {answer.response.time * 1000:.0f} ms"
 
-        return False
+    except dns.resolver.LifetimeTimeout:
+
+        return False, "DNS query timed out"
+
+    except dns.resolver.NXDOMAIN:
+
+        return False, "Host does not exist"
+
+    except dns.resolver.NoNameservers:
+
+        return False, "No DNS server available"
+
+    except Exception as e:
+
+        return False, str(e)
