@@ -11,31 +11,46 @@ def update(job, new_state):
 
     name = job["name"]
 
+    #
+    # First time we've seen this object.
+    #
     if name not in STATE:
 
         STATE[name] = {
             "state": new_state,
-            "time": now,
+            "since": now,
             "type": job["type"],
-            "device_type": job.get("device_type", "")
+            "checks": job.get("checks", {})
         }
 
         return False, None
 
-    old_state = STATE[name]["state"]
-    old_time = STATE[name]["time"]
+    record = STATE[name]
 
-    if old_state == new_state:
+    #
+    # No change.
+    #
+    if record["state"] == new_state:
+
         return False, None
 
-    duration = int(now - old_time)
+    #
+    # State changed.
+    #
+    duration = None
 
-    STATE[name] = {
-        "state": new_state,
-        "time": now,
-        "type": job["type"],
-        "device_type": job.get("device_type", "")
-    }
+    #
+    # If we're recovering from DOWN,
+    # calculate the outage duration.
+    #
+    if record["state"] == "DOWN" and new_state == "UP":
+
+        duration = int(now - record["since"])
+
+    record["state"] = new_state
+    record["since"] = now
+    record["type"] = job["type"]
+    record["checks"] = job.get("checks", {})
 
     return True, duration
 

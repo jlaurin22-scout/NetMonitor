@@ -54,6 +54,50 @@ if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+#
+# Configure monitored devices
+#
+DEVICES_JSON=""
+
+echo
+echo "========================================"
+echo " Configure Monitored Devices"
+echo "========================================"
+
+while true
+do
+    echo
+    read -p "Add a monitored device? (Y/N): " ADDDEVICE
+
+    if [[ ! "$ADDDEVICE" =~ ^[Yy]$ ]]; then
+        break
+    fi
+
+    read -p "Device Name : " DEVICENAME
+    read -p "IP Address  : " DEVICEIP
+
+    read -p "Enable Ping monitoring? (Y/N): " PING
+    read -p "Enable SNMP monitoring? (Y/N): " SNMP
+
+    [[ "$PING" =~ ^[Yy]$ ]] && PING=true || PING=false
+    [[ "$SNMP" =~ ^[Yy]$ ]] && SNMP=true || SNMP=false
+
+    if [ -n "$DEVICES_JSON" ]; then
+        DEVICES_JSON="${DEVICES_JSON},"
+    fi
+
+    DEVICES_JSON="${DEVICES_JSON}
+        {
+            \"id\": $(( $(echo "$DEVICES_JSON" | grep -c '"id"') + 1 )),
+            \"name\": \"${DEVICENAME}\",
+            \"ip\": \"${DEVICEIP}\",
+            \"checks\": {
+                \"ping\": ${PING},
+                \"snmp\": ${SNMP}
+            }
+        }"
+done
+
 cat >/tmp/netmonitor.json <<EOF
 {
     "version": "0.4.0",
@@ -96,7 +140,7 @@ EOF
 #
 # Give ownership to the service account
 #
-chown scout:scout /var/lib/netmonitor/netmonitor.db
+chown root:root /var/lib/netmonitor/netmonitor.db
 chmod 664 /var/lib/netmonitor/netmonitor.db
 
 echo "Database initialized."

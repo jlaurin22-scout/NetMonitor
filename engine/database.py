@@ -79,10 +79,11 @@ def add_event(timestamp, job_name, job_type, state, message):
 
     conn.commit()
     conn.close()
+
+
 def update_status(job_name, job_type, state):
 
     conn = sqlite3.connect(DB)
-
     cur = conn.cursor()
 
     cur.execute("""
@@ -106,6 +107,141 @@ def update_status(job_name, job_type, state):
         job_type,
         state
     ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_current_status():
+
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            job_name,
+            job_type,
+            state,
+            last_change
+        FROM current_status
+        ORDER BY
+            CASE job_type
+                WHEN 'gateway' THEN 1
+                WHEN 'internet' THEN 2
+                WHEN 'dns' THEN 3
+                WHEN 'device' THEN 4
+                ELSE 5
+            END,
+            job_name
+    """)
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows
+
+
+def get_recent_events(limit=50):
+
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            timestamp,
+            job_name,
+            state,
+            message
+        FROM events
+        ORDER BY id DESC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows
+
+def remove_status(job_name):
+
+    conn = sqlite3.connect(DB)
+
+    cur = conn.cursor()
+
+    cur.execute("""
+        DELETE FROM current_status
+        WHERE job_name = ?
+    """,
+    (
+        job_name,
+    ))
+
+    conn.commit()
+    conn.close()
+
+def cleanup_device_status(valid_devices):
+
+    conn = sqlite3.connect(DB)
+
+    cur = conn.cursor()
+
+    placeholders = ",".join("?" * len(valid_devices))
+
+    if valid_devices:
+
+        cur.execute(
+            f"""
+            DELETE FROM current_status
+            WHERE job_type='device'
+            AND job_name NOT IN ({placeholders})
+            """,
+            tuple(valid_devices)
+        )
+
+    else:
+
+        cur.execute("""
+            DELETE FROM current_status
+            WHERE job_type='device'
+        """)
+
+    conn.commit()
+    conn.close()
+
+def sync_device_status(valid_devices):
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT job_name
+        FROM current_status
+        WHERE job_type='device'
+    """)
+
+    rows = cur.fetchall()
+
+    valid = set(valid_devices)
+
+    for row in rows:
+
+        name = row[0]
+
+        if name not in valid:
+
+            cur.execute("""
+                DELETE FROM current_status
+                WHERE job_name=?
+            """,
+            (
+                name,
+            ))
 
     conn.commit()
     conn.close()

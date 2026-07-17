@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 from scheduler import Scheduler
-from config import load
-from database import initialize
+from config import load, get_devices
+from database import initialize, sync_device_status
 from constants import (
     JOB_GATEWAY,
     JOB_INTERNET,
@@ -13,8 +13,16 @@ from constants import (
 
 def main():
 
+    print()
+    print("============================================================")
+    print("              NetMonitor Engine v0.4.0")
+    print("============================================================")
+    print()
+
+    print("Initializing database...")
     initialize()
 
+    print("Loading configuration...")
     config = load()
 
     customer = config["customer"]
@@ -22,6 +30,7 @@ def main():
 
     scheduler = Scheduler()
 
+    print("Adding Gateway monitor...")
     scheduler.add_job({
         "type": JOB_GATEWAY,
         "name": "Gateway",
@@ -29,6 +38,7 @@ def main():
         "interval": settings["monitor"]["gateway_interval"]
     })
 
+    print("Adding Internet monitor...")
     scheduler.add_job({
         "type": JOB_INTERNET,
         "name": "Internet",
@@ -36,23 +46,47 @@ def main():
         "interval": settings["monitor"]["internet_interval"]
     })
 
+    print("Adding DNS monitor...")
     scheduler.add_job({
         "type": JOB_DNS,
         "name": "DNS",
+        "server": settings["dns"]["server"],
+        "lookup": settings["dns"]["lookup"],
         "interval": settings["monitor"]["dns_interval"]
     })
 
-    for device in customer["devices"]:
+    devices = get_devices()
+
+    sync_device_status(
+         [device["name"] for device in devices]
+    )
+
+    print(f"Adding {len(devices)} device monitor(s)...")
+
+    for device in devices:
+
+        print(f"  - {device['name']} ({device['ip']})")
 
         scheduler.add_job({
             "type": JOB_DEVICE,
             "name": device["name"],
             "ip": device["ip"],
-            "device_type": device["type"],
+            "checks": device["checks"],
             "interval": settings["monitor"]["device_interval"]
         })
 
-    scheduler.run()
+    print()
+    print("Engine started successfully.")
+    print()
+
+    try:
+        scheduler.run()
+
+    except KeyboardInterrupt:
+        print()
+        print("Stopping NetMonitor...")
+        print("Goodbye.")
+        print()
 
 
 if __name__ == "__main__":

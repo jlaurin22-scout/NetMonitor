@@ -9,9 +9,9 @@ def classify(status):
     internet = None
     dns = None
 
-    failed_devices = []
+    failed_devices = 0
 
-    for name, info in status.items():
+    for info in status.values():
 
         job_type = info["type"]
         state = info["state"]
@@ -26,69 +26,48 @@ def classify(status):
             dns = state
 
         elif job_type == "device" and state == STATE_DOWN:
-            failed_devices.append(info)
+            failed_devices += 1
 
     #
-    # Router Failure
+    # Gateway unreachable
     #
     if gateway == STATE_DOWN:
         return {
-            "classification": "Router Failure",
+            "classification": "Gateway Unreachable",
             "confidence": 100
         }
 
     #
-    # ISP Failure
+    # Internet unreachable
     #
     if gateway != STATE_DOWN and internet == STATE_DOWN:
         return {
-            "classification": "ISP Failure",
-            "confidence": 95
+            "classification": "Internet Unreachable",
+            "confidence": 100
         }
 
     #
-    # DNS Failure
+    # DNS failure
     #
     if internet != STATE_DOWN and dns == STATE_DOWN:
         return {
             "classification": "DNS Failure",
-            "confidence": 95
+            "confidence": 100
         }
 
     #
-    # Device-specific failures
+    # Device failures
     #
-    if len(failed_devices) == 1:
-
-        device_type = failed_devices[0]["device_type"].lower()
-
-        if device_type == "radio":
-            return {
-                "classification": "Internet Radio Failure",
-                "confidence": 99
-            }
-
-        if device_type == "nas":
-            return {
-                "classification": "NAS Failure",
-                "confidence": 99
-            }
-
-        if device_type == "switch":
-            return {
-                "classification": "Network Switch Failure",
-                "confidence": 95
-            }
-
+    if failed_devices == 1:
         return {
             "classification": "Single Device Failure",
-            "confidence": 98
+            "confidence": 100
         }
 
-    if len(failed_devices) > 1:
+    if failed_devices > 1:
         return {
             "classification": "Multiple Device Failure",
-            "confidence": 98
+            "confidence": 100
         }
 
     return {
