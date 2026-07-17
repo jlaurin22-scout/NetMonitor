@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
+import os
+import subprocess
 
 import ui
 from cli import (
@@ -44,22 +46,46 @@ def devices_menu():
         elif choice == "2":
 
             ui.clear()
-            if device_add():
-                input("Press ENTER to return...")
+
+            if os.geteuid() == 0:
+
+                if device_add():
+                    input("Press ENTER to return...")
+
+            else:
+
+                subprocess.run(["nm", "device", "add"])
+
             ui.clear()
 
         elif choice == "3":
 
             ui.clear()
-            device_edit()
-            input("Press ENTER to return...")
+
+            if os.geteuid() == 0:
+
+                device_edit()
+                input("Press ENTER to return...")
+
+            else:
+
+                subprocess.run(["nm", "device", "edit"])
+
             ui.clear()
 
         elif choice == "4":
 
             ui.clear()
-            device_remove()
-            input("Press ENTER to return...")
+
+            if os.geteuid() == 0:
+
+                device_remove()
+                input("Press ENTER to return...")
+
+            else:
+
+                subprocess.run(["nm", "device", "remove"])
+
             ui.clear()
 
         elif choice == "5":

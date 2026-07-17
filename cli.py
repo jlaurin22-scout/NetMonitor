@@ -194,7 +194,7 @@ def device_remove():
     )
 
     print()
-    print("Device removed successfully.")
+    print(f'✓ Device "{selected["name"]}" removed successfully.')
     print()
 
 def device_edit():
@@ -600,6 +600,7 @@ def main():
 
         if args[1] == "add":
             device_add()
+            input("Press ENETR to continue...")
             return
 
         if args[1] == "edit":
@@ -612,6 +613,7 @@ def main():
 
         if args[1] == "remove":
             device_remove()
+            input("Press ENTER to continue...") 
             return
 
     print("Command not implemented yet.")
