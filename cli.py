@@ -11,6 +11,7 @@ sys.path.insert(0, str(ENGINE_PATH))
 
 import config
 import database
+import ui
 from inventory.network import detect
 
 VERSION = "0.4.0"
@@ -19,19 +20,7 @@ VERSION_FILE = "/etc/netmonitor/version"
 BUILD_FILE = "/etc/netmonitor/build"
 
 def banner():
-
-    print(rf"""
- ███████╗ ██████╗ ██████╗ ██╗   ██╗████████╗
- ██╔════╝██╔════╝██╔═══██╗██║   ██║╚══██╔══╝
- ███████╗██║     ██║   ██║██║   ██║   ██║
- ╚════██║██║     ██║   ██║██║   ██║   ██║
- ███████║╚██████╗╚██████╔╝╚██████╔╝   ██║
- ╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝    ╚═╝
-
-                 Scout Console
-                 Version {VERSION}
-
-""")
+    ui.banner()
 
 def help_menu():
 
@@ -180,7 +169,7 @@ def device_add():
         return
 
     print()
-    print("Device added successfully.")
+    ui.success("Device added successfully.")
 
     print("Restarting NetMonitor...")
 
@@ -271,7 +260,7 @@ def device_remove():
     if not selected_devices:
 
         print()
-        print("No valid devices selected.")
+        ui.error("No valid devices selected.")
         print()
         return
 
@@ -356,7 +345,7 @@ def device_edit():
     if selected is None:
 
         print()
-        print("Device not found.")
+        ui.error("Device not found.")
         print()
         return
 
@@ -427,7 +416,7 @@ def device_scan():
     from engine.inventory import scanner
 
     print()
-    print("Scanning network...")
+    ui.info("Scanning network...")
     print()
 
     devices = scanner.scan()

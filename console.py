@@ -42,6 +42,7 @@ def devices_menu():
             device_list()
             input("Press ENTER to return...")
             ui.clear()
+            return
 
         elif choice == "2":
 
@@ -57,6 +58,7 @@ def devices_menu():
                 subprocess.run(["nm", "device", "add"])
 
             ui.clear()
+            return
 
         elif choice == "3":
 
@@ -72,6 +74,7 @@ def devices_menu():
                 subprocess.run(["nm", "device", "edit"])
 
             ui.clear()
+            return
 
         elif choice == "4":
 
@@ -87,6 +90,7 @@ def devices_menu():
                 subprocess.run(["nm", "device", "remove"])
 
             ui.clear()
+            return
 
         elif choice == "5":
 
