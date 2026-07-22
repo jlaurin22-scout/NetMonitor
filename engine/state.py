@@ -1,9 +1,32 @@
 #!/usr/bin/env python3
 
 import time
+from datetime import datetime
+from database import get_current_status
 
 STATE = {}
 
+def initialize():
+
+    for row in get_current_status():
+
+        if row["last_change"]:
+
+            since = datetime.strptime(
+                row["last_change"],
+                "%Y-%m-%d %H:%M:%S"
+            ).timestamp()
+
+        else:
+
+            since = time.time()
+
+        STATE[row["job_name"]] = {
+            "state": row["state"],
+            "since": since,
+            "type": row["job_type"],
+            "checks": {}
+        }
 
 def update(job, new_state):
 

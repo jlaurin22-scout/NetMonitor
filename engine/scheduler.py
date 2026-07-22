@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 
 from jobs import run
-
+from state import initialize
 
 class Scheduler:
 
@@ -19,6 +19,8 @@ class Scheduler:
         self.jobs.append(job)
 
     def run(self):
+
+        initialize()
 
         print("\nScheduler started.")
         print(f"Loaded {len(self.jobs)} monitoring jobs.\n")

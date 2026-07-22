@@ -11,101 +11,191 @@ sys.path.insert(0, str(ENGINE_PATH))
 
 import config
 import database
-import ui
 from inventory.network import detect
-import console
 
 VERSION = "0.4.0"
 
 VERSION_FILE = "/etc/netmonitor/version"
 BUILD_FILE = "/etc/netmonitor/build"
 
-
 def banner():
 
-    print()
-    print("==========================================")
-    print(f"         NetMonitor v{VERSION}")
-    print("==========================================")
-    print()
+    print(rf"""
+ ███████╗ ██████╗ ██████╗ ██╗   ██╗████████╗
+ ██╔════╝██╔════╝██╔═══██╗██║   ██║╚══██╔══╝
+ ███████╗██║     ██║   ██║██║   ██║   ██║
+ ╚════██║██║     ██║   ██║██║   ██║   ██║
+ ███████║╚██████╗╚██████╔╝╚██████╔╝   ██║
+ ╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝    ╚═╝
 
+                 Scout Console
+                 Version {VERSION}
+
+""")
 
 def help_menu():
 
-    banner()
-
-    print("Available Commands")
-    print()
-    print("  init")
-    print("  status")
-    print("  watch")
-    print("  events")
-    print("  health")
-    print("  service")
-    print("  version")
-    print("  reset")
-    print()
-    print("Device Commands")
-    print()
-    print("  device add")
-    print("  device edit")
-    print("  device list")
-    print("  device remove")
-    print()
-
-def device_add():
+    os.system("clear")
 
     while True:
 
-        ui.title("Add Device")
+        os.system("clear")
 
-        name = input("Device Name (0=Cancel): ").strip()
+        banner()
 
-        if name == "0":
-            return False
-
-        ip = input("IP Address (0=Cancel): ").strip()
-
-        if ip == "0":
-            return False
-
+        print("Main Menu")
+        print("---------")
+        print()
+        print("1) Status")
+        print("2) Live Watch")
+        print("3) Events")
+        print("4) Incidents")
+        print()
+        print("5) Devices")
+        print("6) Service")
+        print("7) Version")
+        print("8) Reset")
+        print()
+        print("Q) Quit")
         print()
 
-        ping = input("Enable Ping monitoring? (Y/N): ").lower().startswith("y")
-        snmp = input("Enable SNMP monitoring? (Y/N): ").lower().startswith("y")
+        choice = input("Selection: ").strip().lower()
 
-        try:
+        if choice == "1":
+            os.system("clear")
+            status()
 
-            config.add_device(
-                name=name,
-                ip=ip,
-                ping=ping,
-                snmp=snmp
-            )
+        elif choice == "2":
+            watch()
+            continue
 
-            subprocess.run(
-                ["systemctl", "restart", "netmonitor"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+        elif choice == "3":
+            os.system("clear")
+            events()
 
-            print()
-            print(f'✓ Device "{name}" added successfully.')
-            print()
+        elif choice == "4":
+            os.system("clear")
+            incidents()
 
-            return True
+        elif choice == "5":
+            os.system("clear")
+            device_menu()
+            continue
 
-        except Exception as e:
+        elif choice == "6":
+            os.system("clear")
+            service()
 
-            print()
-            print(f"ERROR: {e}")
-            print()
+        elif choice == "7":
+            os.system("clear")
+            version()
 
-            input("Press ENTER to try again...")
+        elif choice == "8":
+            os.system("clear")
+            reset()
+
+        elif choice == "q":
+            os.system("clear")
+            return
+
+        input("\nPress Enter to continue...")
+        os.system("clear")
+
+def device_menu():
+
+    os.system("clear")
+
+    while True:
+
+        banner()
+
+        print("Devices")
+        print("-------")
+        print()
+        print("1) List Devices")
+        print("2) Scan Network & Add")
+        print("3) Add Device Manually")
+        print("4) Remove Device")
+        print()
+        print("B) Back")
+        print()
+
+        choice = input("Selection: ").strip().lower()
+
+        if choice == "1":
+            os.system("clear")
+            device_list()
+
+        elif choice == "2":
+            os.system("clear")
+            device_scan()
+
+        elif choice == "3":
+            os.system("clear")
+            device_add()
+
+        elif choice == "4":
+            os.system("clear")
+            device_remove()
+
+        elif choice == "b":
+            os.system("clear")
+            return
+
+        input("\nPress Enter to continue...")
+        os.system("clear")
+
+def add_monitored_device(name, ip, ping=True, snmp=False):
+
+    config.add_device(
+        name=name,
+        ip=ip,
+        ping=ping,
+        snmp=snmp
+    )
+
+def device_add():
+
+    banner()
+
+    print("Add Monitored Device")
+    print("--------------------")
+
+    name = input("Device Name : ").strip()
+    ip = input("IP Address  : ").strip()
+
+    print()
+
+    ping = input("Enable Ping monitoring? (Y/N): ").lower().startswith("y")
+    snmp = input("Enable SNMP monitoring? (Y/N): ").lower().startswith("y")
+
+    try:
+        add_monitored_device(name, ip, ping, snmp)
+
+    except Exception as e:
+
+        print()
+        print(f"ERROR: {e}")
+        print()
+        return
+
+    print()
+    print("Device added successfully.")
+
+    print("Restarting NetMonitor...")
+
+    subprocess.run(
+        ["systemctl", "restart", "netmonitor"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    print("Done.")
+    print()
 
 def device_list():
 
-    ui.title("Devices")
+    banner()
 
     devices = config.get_devices()
 
@@ -153,28 +243,49 @@ def device_remove():
 
     print()
 
-    device_id = int(input("Enter device ID to remove: "))
+    selection = input(
+        "Enter device ID(s) to remove (e.g. 2,5,8): "
+    ).strip()
 
-    selected = None
+    if not selection:
+        return  
 
-    for device in devices:
+    removed = 0
 
-        if device["id"] == device_id:
-            selected = device
-            break
+    selected_devices = []
 
-    if selected is None:
+    for item in selection.split(","):
+
+        try:
+            device_id = int(item.strip())
+
+        except ValueError:
+            continue
+
+        for device in devices:
+
+            if device["id"] == device_id:
+                selected_devices.append(device)
+                break
+
+    if not selected_devices:
 
         print()
-        print("Device not found.")
+        print("No valid devices selected.")
         print()
         return
 
     print()
+    print("The following devices will be removed:")
+    print()
 
-    answer = input(
-        f'Remove "{selected["name"]}" ({selected["ip"]})? (Y/N): '
-    ).strip().lower()
+    for device in selected_devices:
+
+        print(f"  {device['name']} ({device['ip']})")
+
+    print()
+
+    answer = input("Proceed? (Y/N): ").strip().lower()
 
     if not answer.startswith("y"):
 
@@ -183,19 +294,29 @@ def device_remove():
         print()
         return
 
-    config.remove_device(device_id)
+    for selected in selected_devices:
 
-    database.remove_status(selected["name"])
+        config.remove_device(selected["id"])
+        database.remove_status(selected["name"])
 
-    subprocess.run(
-        ["systemctl", "restart", "netmonitor"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
+        print(f"✓ Removed {selected['name']}")
+        removed += 1
+
+    if removed:
+
+        print()
+        print("Restarting NetMonitor...")
+
+        subprocess.run(
+            ["systemctl", "restart", "netmonitor"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        print("Done.")
 
     print()
-    print(f'✓ Device "{selected["name"]}" removed successfully.')
-    print()
+    print(f"{removed} device(s) removed.")
 
 def device_edit():
 
@@ -301,9 +422,100 @@ def device_edit():
     print("Device updated successfully.")
     print()
 
+def device_scan():
+
+    from engine.inventory import scanner
+
+    print()
+    print("Scanning network...")
+    print()
+
+    devices = scanner.scan()
+
+    if not devices:
+        print("No devices found.")
+        return
+
+    print(
+        f"{'#':>2} "
+        f"{'IP Address':15} "
+        f"{'Hostname':22} "
+        f"{'Type':18} "
+        f"{'SNMP':5}"
+    )
+
+    print("-" * 70)
+
+    for i, device in enumerate(devices, 1):
+
+        snmp = "Yes" if device.snmp else "No"
+
+        print(
+            f"{i:>2} "
+            f"{device.ip:15} "
+            f"{device.hostname[:22]:22} "
+            f"{device.device_type[:18]:18} "
+            f"{snmp:5}"
+        )
+    print()
+
+    selection = input(
+        "Select device(s) to add (e.g. 1,3,5 or Enter to cancel): "
+    ).strip()
+
+    if not selection:
+        return
+
+    added = 0
+
+    for item in selection.split(","):
+
+        try:
+            index = int(item.strip()) - 1
+
+            if index < 0 or index >= len(devices):
+                continue
+
+            device = devices[index]
+
+            name = device.hostname.strip()
+
+            if not name or name.lower() == "unknown":
+                name = device.ip
+
+            add_monitored_device(
+                name=name,
+                ip=device.ip,
+                ping=True,
+                snmp=device.snmp
+            )
+
+            print(f"✓ Added {name}")
+
+            added += 1
+
+        except Exception as e:
+            print(f"✗ {e}")
+
+    if added:
+
+        print()
+        print("Restarting NetMonitor...")
+
+        subprocess.run(
+            ["systemctl", "restart", "netmonitor"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        print("Done.")
+
+    print()
+    print(f"{added} device(s) added.")
+
 def status():
 
-    ui.title("Dashboard")
+    banner()
 
     customer = config.load_customer()
 
@@ -350,15 +562,15 @@ def events():
 
     rows = database.get_recent_events()
 
-    print(f"{'DATE & TIME':<20} {'OBJECT':<20} {'STATE':<8} MESSAGE")
-    print("-" * 110)
+    print(f"{'DATE & TIME':<20} {'STATE':<6} {'OBJECT':<24} MESSAGE")
+    print("-" * 90)
 
     for row in rows:
 
         print(
             f"{row['timestamp']:<20}"
-            f"{row['job_name']:<20}"
-            f"{row['state']:<8}"
+            f"{row['state']:<6}"
+            f"{row['job_name']:<24}"
             f"{row['message']}"
         )
 
@@ -540,6 +752,13 @@ def reset():
 
 def watch():
 
+    print()
+    print("Starting Live Watch...")
+    print()
+    print("Press Ctrl+C at any time to return to the Main Menu.")
+    print()
+    input("Press Enter to begin...")
+    
     try:
 
         while True:
@@ -553,15 +772,15 @@ def watch():
     except KeyboardInterrupt:
 
         print()
-        print("Stopping watch mode.")
-        print()
+        print("Returning to Main Menu...")
+        time.sleep(1)
 
 def main():
 
     args = sys.argv[1:]
 
     if not args:
-        console.run()
+        help_menu()
         return
 
     if args[0] == "init":
@@ -584,6 +803,10 @@ def main():
         events()
         return
 
+    if args[0] == "incidents":
+        incidents()
+        return
+
     if args[0] == "version":
         version()
         return
@@ -595,12 +818,15 @@ def main():
     if args[0] == "device":
 
         if len(args) < 2:
-            print("Usage: nm device add|list|remove")
+            print("Usage: nm device scan|add|list|remove")
+            return
+
+        if args[1] == "scan":
+            device_scan()
             return
 
         if args[1] == "add":
             device_add()
-            input("Press ENETR to continue...")
             return
 
         if args[1] == "edit":
@@ -613,11 +839,44 @@ def main():
 
         if args[1] == "remove":
             device_remove()
-            input("Press ENTER to continue...") 
             return
 
     print("Command not implemented yet.")
 
+def incidents():
+
+    from datetime import datetime
+
+    banner()
+
+    incidents = database.get_incidents()
+
+    if not incidents:
+        print("No incidents found.\n")
+        return
+
+    for i, incident in enumerate(reversed(incidents), 1):
+
+        start = datetime.strptime(
+            incident["start"], "%Y-%m-%d %H:%M:%S"
+        )
+        end = datetime.strptime(
+            incident["end"], "%Y-%m-%d %H:%M:%S"
+        )
+
+        duration = end - start
+
+        print(f"Incident {i}")
+        print("-" * 60)
+        print(f"Started : {incident['start']}")
+        print(f"Ended   : {incident['end']}")
+        print(f"Duration: {duration}")
+        print("Affected:")
+
+        for obj in sorted(incident["objects"]):
+            print(f"  {obj}")
+
+        print()
 
 if __name__ == "__main__":
     main()

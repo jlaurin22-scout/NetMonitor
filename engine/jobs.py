@@ -14,37 +14,37 @@ from database import add_event, update_status
 from constants import STATE_UP, STATE_DOWN
 
 
-def event(job, state, duration, details=None):
+def event(job, state, duration):
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    status = current()
-
-    result = classify(status)
-
-    classification = result["classification"]
-    confidence = result["confidence"]
-
     if state == STATE_DOWN:
 
-        message = f"{job['name']} is DOWN"
+        message = "Unreachable"
 
     elif duration is None:
 
-        message = f"{job['name']} is UP"
+        message = "Available"
 
     else:
 
-        message = (
-            f"{job['name']} recovered "
-            f"after {duration} seconds"
-        )
+        if duration < 60:
+            text = f"{duration}s"
+        elif duration < 3600:
+            minutes, seconds = divmod(duration, 60)
+            if seconds:
+                text = f"{minutes}m {seconds}s"
+            else:
+                text = f"{minutes}m"
+        else:
+            hours, remainder = divmod(duration, 3600)
+            minutes = remainder // 60
+            if minutes:
+                text = f"{hours}h {minutes}m"
+            else:
+                text = f"{hours}h"
 
-    if details:
-
-        message += f" ({details})"
-
-    message += f" | {classification} ({confidence}%)"
+        message = f"Recovered ({text})"
 
     add_event(
         timestamp,
@@ -56,12 +56,9 @@ def event(job, state, duration, details=None):
 
     print(f"{timestamp}  EVENT    {message}")
 
-
 def run(job):
 
     timestamp = datetime.now().strftime("%H:%M:%S")
-    
-    details = None
 
     if job["type"] == "gateway":
 
@@ -82,20 +79,16 @@ def run(job):
             else STATE_DOWN
         )
 
-        if state == STATE_DOWN:
-            details = "DNS server unreachable"
-
         #
         # Step 2 - Verify DNS resolution
         #
         if state == STATE_UP:
 
-            success, details = dns_lookup(
-                job["server"],
-                job["lookup"]
+            state = (
+                STATE_UP
+                if dns_lookup(job["lookup"])
+                else STATE_DOWN
             )
-
-            state = STATE_UP if success else STATE_DOWN
 
     elif job["type"] == "device":
 
@@ -113,11 +106,8 @@ def run(job):
         state
     )
 
-    if details:
-        print(f"{timestamp}  CHECK    {job['name']:<20} {state} ({details})")
-    else:
-        print(f"{timestamp}  CHECK    {job['name']:<20} {state}")
+    print(f"{timestamp}  CHECK    {job['name']:<20} {state}")
 
     if has_changed:
 
-        event(job, state, duration, details)
+        event(job, state, duration)
