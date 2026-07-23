@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import time
+from notify import send_startup_ip
 from scheduler import Scheduler
 from config import load, get_devices
 from database import initialize, sync_device_status
@@ -22,12 +24,25 @@ def main():
     print("Initializing database...")
     initialize()
 
+    send_startup_ip()
+
     print("Loading configuration...")
     config = load()
 
+    if "gateway" not in config["customer"]["network"]:
+
+        print()
+        print("NetMonitor has not been initialized.")
+        print("Run 'nm init' to configure this appliance.")
+        print("Waiting for configuration...")
+        print()
+
+        while True:
+            time.sleep(60)
+
     customer = config["customer"]
     settings = config["settings"]
-
+    
     scheduler = Scheduler()
 
     print("Adding Gateway monitor...")

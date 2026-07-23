@@ -60,3 +60,13 @@ def info(text):
 
 def warning(text):
     print(f"{YELLOW}! {text}{RESET}")
+
+def state(state):
+
+    if state == "UP":
+        return f"{GREEN}● UP{RESET}"
+
+    if state == "DOWN":
+        return f"{RED}● DOWN{RESET}"
+
+    return state

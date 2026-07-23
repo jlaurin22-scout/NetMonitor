@@ -117,15 +117,15 @@ def device_menu():
 
         elif choice == "2":
             os.system("clear")
-            device_scan()
+            subprocess.run(["nm", "device", "scan"])
 
         elif choice == "3":
             os.system("clear")
-            device_add()
+            subprocess.run(["nm", "device", "add"])
 
         elif choice == "4":
             os.system("clear")
-            device_remove()
+            subprocess.run(["nm", "device", "remove"])
 
         elif choice == "b":
             os.system("clear")
@@ -164,14 +164,14 @@ def device_add():
     except Exception as e:
 
         print()
-        print(f"ERROR: {e}")
+        ui.error(str(e))
         print()
         return
 
     print()
     ui.success("Device added successfully.")
 
-    print("Restarting NetMonitor...")
+    ui.info("Restarting NetMonitor...")
 
     subprocess.run(
         ["systemctl", "restart", "netmonitor"],
@@ -179,7 +179,7 @@ def device_add():
         stderr=subprocess.DEVNULL
     )
 
-    print("Done.")
+    ui.success("Done.")
     print()
 
 def device_list():
@@ -190,7 +190,7 @@ def device_list():
 
     if not devices:
 
-        print("No monitored devices configured.")
+        ui.warning("No monitored devices configured.")
         print()
         return
 
@@ -215,7 +215,7 @@ def device_remove():
 
     if not devices:
 
-        print("No monitored devices configured.")
+        ui.warning("No monitored devices configured.")
         print()
         return
 
@@ -279,7 +279,7 @@ def device_remove():
     if not answer.startswith("y"):
 
         print()
-        print("Cancelled.")
+        ui.warning("Cancelled.")
         print()
         return
 
@@ -288,13 +288,13 @@ def device_remove():
         config.remove_device(selected["id"])
         database.remove_status(selected["name"])
 
-        print(f"✓ Removed {selected['name']}")
+        ui.success(f"✓ Removed {selected['name']}")
         removed += 1
 
     if removed:
 
         print()
-        print("Restarting NetMonitor...")
+        ui.info("Restarting NetMonitor...")
 
         subprocess.run(
             ["systemctl", "restart", "netmonitor"],
@@ -302,10 +302,10 @@ def device_remove():
             stderr=subprocess.DEVNULL
         )
 
-        print("Done.")
+        ui.success("Done.")
 
     print()
-    print(f"{removed} device(s) removed.")
+    ui.success(f"{removed} device(s) removed.")
 
 def device_edit():
 
@@ -315,7 +315,7 @@ def device_edit():
 
     if not devices:
 
-        print("No monitored devices configured.")
+        ui.warning("No monitored devices configured.")
         print()
         return
 
@@ -389,7 +389,7 @@ def device_edit():
     if not answer.startswith("y"):
 
         print()
-        print("Cancelled.")
+        ui.warning("Cancelled.")
         print()
         return
 
@@ -422,7 +422,7 @@ def device_scan():
     devices = scanner.scan()
 
     if not devices:
-        print("No devices found.")
+        ui.warning("No devices found.")
         return
 
     print(
@@ -479,17 +479,17 @@ def device_scan():
                 snmp=device.snmp
             )
 
-            print(f"✓ Added {name}")
+            ui.success(f"✓ Added {name}")
 
             added += 1
 
         except Exception as e:
-            print(f"✗ {e}")
+            ui.error(str(e))
 
     if added:
 
         print()
-        print("Restarting NetMonitor...")
+        ui.info("Restarting NetMonitor...")
 
         subprocess.run(
             ["systemctl", "restart", "netmonitor"],
@@ -497,7 +497,7 @@ def device_scan():
             stderr=subprocess.DEVNULL
         )
 
-        print("Done.")
+        ui.success("Done.")
 
     print()
     print(f"{added} device(s) added.")
@@ -522,27 +522,35 @@ def status():
 
     print("Service")
     print("-------")
-    print(f"Status   : {service}")
-    print()
 
+    service_state = "UP" if service.strip() == "active" else "DOWN"
+    print(f"Status   : {ui.state(service_state)}")
+
+    print()
     print("Current Status")
     print("--------------")
 
     rows = database.get_current_status()
 
-    print(f"{'NAME':<20} {'TYPE':<10} {'STATE':<8} LAST CHANGE")
-    print("-" * 65)
+    print(f"{'NAME':<25} {'TYPE':<10} {'STATE':<18} LAST CHANGE")
+    print("-" * 75)
 
     for row in rows:
 
+        name = row["job_name"]
+
+        if len(name) > 25:
+            name = name[:22] + "..."
+
         print(
-            f"{row['job_name']:<20}"
+            f"{name:<25}"
             f"{row['job_type']:<10}"
-            f"{row['state']:<8}"
+            f"{ui.state(row['state']):<18}"
             f"{row['last_change']}"
         )
 
     print()
+
 
 
 def events():
@@ -615,8 +623,11 @@ def service():
 
     print("NetMonitor Service")
     print("------------------")
-    print(f"Status  : {active}")
-    print(f"Enabled : {enabled}")
+
+    status = "UP" if active == "active" else "DOWN"
+    print(f"Status  : {ui.state(status)}")
+    enabled_state = "UP" if enabled == "enabled" else "DOWN"
+    print(f"Enabled : {ui.state(enabled_state)}")
     print(f"PID     : {pid}")
     print(f"Started : {uptime}")
     print()
@@ -649,7 +660,7 @@ def init():
     if not answer.startswith("y"):
 
         print()
-        print("Cancelled.")
+        ui.warning("Cancelled.")
         print()
         return
 
@@ -678,7 +689,7 @@ def init():
     )
 
     print()
-    print("Initialization complete.")
+    ui.success("Initialization complete.")
     print()
 
 def reset():
@@ -692,7 +703,7 @@ def reset():
     if not answer.startswith("y"):
 
         print()
-        print("Cancelled.")
+        ui.warning("Cancelled.")
         print()
         return
 
@@ -732,7 +743,7 @@ def reset():
     subprocess.run(["systemctl", "start", "netmonitor"])
 
     print()
-    print("Reset complete.")
+    ui.success("Reset complete.")
     print()
     print("Run:")
     print()
