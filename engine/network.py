@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import socket
 import subprocess
+
+import dns.resolver
 
 
 def ping(host):
@@ -20,16 +21,18 @@ def ping(host):
     return result.returncode == 0
 
 
-def dns_server_reachable(server):
+def dns_lookup(server, hostname):
 
-    return ping(server)
+    resolver = dns.resolver.Resolver(configure=False)
 
+    resolver.nameservers = [server]
 
-def dns_lookup(hostname):
+    resolver.timeout = 2
+    resolver.lifetime = 2
 
     try:
 
-        socket.gethostbyname(hostname)
+        resolver.resolve(hostname, "A")
 
         return True
 

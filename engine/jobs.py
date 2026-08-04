@@ -4,7 +4,6 @@ from datetime import datetime
 
 from network import (
     ping,
-    dns_server_reachable,
     dns_lookup
 )
 
@@ -66,29 +65,25 @@ def run(job):
 
     elif job["type"] == "internet":
 
-        state = STATE_UP if ping(job["target"]) else STATE_DOWN
+        state = STATE_DOWN
+
+        for target in job["targets"]:
+
+            if ping(target):
+
+                state = STATE_UP
+                break
 
     elif job["type"] == "dns":
 
-        #
-        # Step 1 - Reach the configured DNS server
-        #
         state = (
             STATE_UP
-            if dns_server_reachable(job["server"])
+            if dns_lookup(
+                job["server"],
+                job["lookup"]
+            )
             else STATE_DOWN
         )
-
-        #
-        # Step 2 - Verify DNS resolution
-        #
-        if state == STATE_UP:
-
-            state = (
-                STATE_UP
-                if dns_lookup(job["lookup"])
-                else STATE_DOWN
-            )
 
     elif job["type"] == "device":
 

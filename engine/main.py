@@ -57,7 +57,7 @@ def main():
     scheduler.add_job({
         "type": JOB_INTERNET,
         "name": "Internet",
-        "target": settings["internet"]["target"],
+        "targets": settings["internet"]["targets"],
         "interval": settings["monitor"]["internet_interval"]
     })
 

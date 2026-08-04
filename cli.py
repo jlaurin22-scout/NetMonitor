@@ -35,15 +35,16 @@ def help_menu():
         print("Main Menu")
         print("---------")
         print()
-        print("1) Status")
-        print("2) Live Watch")
-        print("3) Events")
-        print("4) Incidents")
+        print("1) Initialize")
+        print("2) Status")
+        print("3) Live Watch")
+        print("4) Events")
+        print("5) Incidents")
         print()
-        print("5) Devices")
-        print("6) Service")
-        print("7) Version")
-        print("8) Reset")
+        print("6) Devices")
+        print("7) Service")
+        print("8) Version")
+        print("9) Reset")
         print()
         print("Q) Quit")
         print()
@@ -52,36 +53,40 @@ def help_menu():
 
         if choice == "1":
             os.system("clear")
-            status()
+            subprocess.run(["nm", "init"])
 
         elif choice == "2":
+            os.system("clear")
+            status()
+
+        elif choice == "3":
             watch()
             continue
 
-        elif choice == "3":
+        elif choice == "4":
             os.system("clear")
             events()
 
-        elif choice == "4":
+        elif choice == "5":
             os.system("clear")
             incidents()
 
-        elif choice == "5":
+        elif choice == "6":
             os.system("clear")
             device_menu()
             continue
 
-        elif choice == "6":
+        elif choice == "7":
             os.system("clear")
             service()
 
-        elif choice == "7":
+        elif choice == "8":
             os.system("clear")
             version()
 
-        elif choice == "8":
+        elif choice == "9":
             os.system("clear")
-            reset()
+            subprocess.run(["nm", "reset"])
 
         elif choice == "q":
             os.system("clear")
@@ -745,9 +750,8 @@ def reset():
     print()
     ui.success("Reset complete.")
     print()
-    print("Run:")
-    print()
-    print("    sudo nm init")
+    print("Select 'Initialize' from the Main Menu")
+    print("to configure Scout for a new customer.")
     print()
 
 def watch():
