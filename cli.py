@@ -109,7 +109,8 @@ def device_menu():
         print("1) List Devices")
         print("2) Scan Network & Add")
         print("3) Add Device Manually")
-        print("4) Remove Device")
+        print("4) Edit Device")
+        print("5) Remove Device")
         print()
         print("B) Back")
         print()
@@ -129,6 +130,10 @@ def device_menu():
             subprocess.run(["nm", "device", "add"])
 
         elif choice == "4":
+            os.system("clear")
+            subprocess.run(["nm", "device", "edit"])
+
+        elif choice == "5":
             os.system("clear")
             subprocess.run(["nm", "device", "remove"])
 
