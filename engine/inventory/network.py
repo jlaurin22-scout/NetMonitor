@@ -6,15 +6,21 @@ import subprocess
 
 def detect():
 
-    interface_name = ""
-    ip = ""
-    network = None
+    networks = []
 
     #
-    # Get interface, IP address and network
+    # Read all IPv4 interfaces
     #
     addr = subprocess.check_output(
         ["ip", "-o", "-f", "inet", "addr", "show"],
+        text=True
+    ).splitlines()
+
+    #
+    # Read routing table once
+    #
+    routes = subprocess.check_output(
+        ["ip", "route"],
         text=True
     ).splitlines()
 
@@ -27,62 +33,88 @@ def detect():
 
         interface_name = fields[1]
 
+        #
+        # Ignore virtual interfaces.
+        #
+        if (
+            interface_name == "lo"
+            or
+            interface_name.startswith("tailscale")
+            or
+            interface_name.startswith("docker")
+            or
+            interface_name.startswith("br-")
+            or
+            interface_name.startswith("virbr")
+            or
+            interface_name.startswith("tun")
+            or
+            interface_name.startswith("wg")
+        ):
+
+            continue
+            
         cidr = fields[3]
 
         interface = ipaddress.ip_interface(cidr)
 
-        ip = str(interface.ip)
-        network = interface.network
+        gateway = ""
 
-        break
+        #
+        # First look for a default gateway.
+        #
+        for route in routes:
 
-    #
-    # Get default gateway
-    #
-    gateway = ""
+            if (
+                route.startswith("default")
+                and
+                f"dev {interface_name}" in route
+            ):
 
-    routes = subprocess.check_output(
-        ["ip", "route"],
-        text=True
-    ).splitlines()
+                gateway = route.split()[2]
+                break
 
-    for line in routes:
+        #
+        # If there is no default gateway on this interface,
+        # use the first usable address in the subnet.
+        #
+        if gateway == "":
 
-        if line.startswith("default"):
+            gateway = str(
+                list(interface.network.hosts())[0]
+            )
 
-            gateway = line.split()[2]
-            break
+        networks.append(
+            {
+                "interface": interface_name,
+                "ip": str(interface.ip),
+                "gateway": gateway,
+                "network": str(interface.network),
+                "prefix": interface.network.prefixlen,
+                "dns": [
+                    gateway,
+                    "1.1.1.1"
+                ]
+            }
+        )
 
-    #
-    # Use sensible default DNS servers
-    #
-    dns = [
-        gateway,
-        "1.1.1.1"
-    ]
-
-    return {
-        "interface": interface_name,
-        "ip": ip,
-        "gateway": gateway,
-        "network": str(network),
-        "prefix": network.prefixlen,
-        "dns": dns
-    }
-
+    return networks
 
 if __name__ == "__main__":
 
-    info = detect()
+    detected = detect()
 
-    print()
-    print("Detected Network")
-    print("----------------")
-    print(f"Interface : {info['interface']}")
-    print(f"IP        : {info['ip']}")
-    print(f"Gateway   : {info['gateway']}")
-    print(f"Network   : {info['network']}")
-    print(f"Prefix    : /{info['prefix']}")
-    print(f"DNS 1     : {info['dns'][0]}")
-    print(f"DNS 2     : {info['dns'][1]}")
+    for info in detected:
+
+        print()
+        print("Detected Network")
+        print("----------------")
+        print(f"Interface : {info['interface']}")
+        print(f"IP        : {info['ip']}")
+        print(f"Gateway   : {info['gateway']}")
+        print(f"Network   : {info['network']}")
+        print(f"Prefix    : /{info['prefix']}")
+        print(f"DNS 1     : {info['dns'][0]}")
+        print(f"DNS 2     : {info['dns'][1]}")
+
     print()

@@ -55,57 +55,69 @@ def help_menu():
         choice = input("Selection: ").strip().lower()
 
         if choice == "1":
+
             os.system("clear")
-            subprocess.run(["nm", "init"])
+            init()
 
         elif choice == "2":
+
             os.system("clear")
             status()
 
         elif choice == "3":
+
             watch()
             continue
 
         elif choice == "4":
+
             os.system("clear")
             events()
 
         elif choice == "5":
+
             os.system("clear")
             incidents()
 
         elif choice == "6":
+
             os.system("clear")
             scout_analysis()
 
         elif choice == "7":
+
             os.system("clear")
             device_menu()
             continue
 
         elif choice == "8":
+
             os.system("clear")
             configuration_menu()
             continue
 
         elif choice == "9":
+
             os.system("clear")
             service()
 
         elif choice == "v":
+
             os.system("clear")
             version()
-            
+
         elif choice == "r":
+
             os.system("clear")
-            subprocess.run(["nm", "reset"])
+            reset()
 
         elif choice == "q":
+
             os.system("clear")
             return
 
         input("\nPress Enter to continue...")
-
+        
 def configuration_menu():
 
     os.system("clear")
@@ -117,9 +129,9 @@ def configuration_menu():
         print("Configuration")
         print("-------------")
         print()
-        print("1) Customer Name")
-        print("2) Site Name")
-        print("3) Router Name")
+        print("1) Customer")
+        print("2) Site")
+        print("3) Networks")
         print()
         print("B) Back")
         print()
@@ -138,9 +150,10 @@ def configuration_menu():
 
         elif choice == "3":
 
-            print()
-            print("Coming soon.")
-            
+            os.system("clear")
+            networks_menu()
+            continue
+
         elif choice == "b":
 
             os.system("clear")
@@ -153,6 +166,104 @@ def configuration_menu():
 
         input("\nPress Enter to continue...")
         os.system("clear")
+ 
+def networks_menu():
+
+    os.system("clear")
+
+    while True:
+
+        banner()
+
+        print("Networks")
+        print("--------")
+        print()
+        print("1) List Networks")
+        print("2) Add Network")
+        print("3) Edit Network")
+        print("4) Remove Network")
+        print()
+        print("B) Back")
+        print()
+
+        choice = input("Selection: ").strip().lower()
+
+        if choice == "1":
+
+            os.system("clear")
+            network_list()
+
+        elif choice == "2":
+
+            os.system("clear")
+            add_network_menu()
+
+        elif choice == "3":
+
+            print()
+            print("Coming in Build 0.5.0-dev2")
+
+        elif choice == "4":
+
+            print()
+            print("Coming in Build 0.5.0-dev2")
+
+        elif choice == "b":
+
+            os.system("clear")
+            return
+
+        else:
+
+            print()
+            print("Invalid selection.")
+
+        input("\nPress Enter to continue...")
+        os.system("clear")
+
+def add_network_menu():
+
+    banner()
+
+    print("Add Network")
+    print("-----------")
+    print()
+
+    name = input("Network Name      : ").strip()
+    interface = input("Interface         : ").strip()
+    ip = input("IP Address        : ").strip()
+    prefix = int(input("Prefix            : ").strip())
+    gateway = input("Gateway           : ").strip()
+    gateway_name = input("Gateway Name      : ").strip()
+    dns1 = input("Primary DNS       : ").strip()
+    dns2 = input("Secondary DNS     : ").strip()
+
+    try:
+
+        network_id = config.add_network(
+            name,
+            interface,
+            ip,
+            prefix,
+            gateway,
+            gateway_name,
+            [
+                dns1,
+                dns2
+            ]
+        )
+
+        print()
+        ui.success(
+            f"Network added successfully (ID {network_id})."
+        )
+
+    except Exception as e:
+
+        print()
+        ui.error(str(e))
+
+    print()
         
 def device_menu():
 
@@ -272,6 +383,38 @@ def device_list():
             f"{device['id']:<4}"
             f"{device['name']:<25}"
             f"{device['ip']}"
+        )
+
+    print()
+    
+def network_list():
+
+    banner()
+
+    networks = config.get_networks()
+
+    if not networks:
+
+        ui.warning("No networks configured.")
+        print()
+        return
+
+    print(
+        f"{'ID':<4} "
+        f"{'NAME':<18} "
+        f"{'INTERFACE':<12} "
+        f"{'GATEWAY'}"
+    )
+
+    print("-" * 60)
+
+    for network in networks:
+
+        print(
+            f"{network['id']:<4}"
+            f"{network['name']:<18}"
+            f"{network['interface']:<12}"
+            f"{network['gateway']}"
         )
 
     print()
@@ -591,11 +734,6 @@ def status():
 
     customer = config.load_customer()
 
-    gateway_name = customer["network"].get(
-        "gateway_name",
-        "Gateway"
-    )
-
     print("Customer")
     print("--------")
     print(f"Customer : {customer.get('customer','Unknown')}")
@@ -627,11 +765,12 @@ def status():
 
         name = row["job_name"]
 
-        if name == "Gateway":
+        if ":" in name:
 
-            name = gateway_name
+            name = name.split(":", 1)[1]
 
         if len(name) > 25:
+
             name = name[:22] + "..."
 
         print(
@@ -677,26 +816,48 @@ def clear_events():
     print("Event history successfully cleared.")
     print("Scout will now begin recording a new history.")
 
-def events():
+def events(limit=50):
 
     banner()
 
-    rows = database.get_recent_events()
+    print("Recent Events")
+    print("-------------")
+    print()
 
-    print(f"{'DATE & TIME':<20} {'STATE':<6} {'OBJECT':<24} MESSAGE")
-    print("-" * 90)
+    rows = database.get_recent_events(limit)
+
+    if not rows:
+
+        ui.info("No events recorded.")
+        print()
+        return
+
+    print(
+        f"{'TIME':<20}"
+        f"{'STATE':<6}"
+        f"{'NAME':<24}"
+        f"MESSAGE"
+    )
+
+    print("-" * 80)
 
     for row in rows:
+
+        name = row["job_name"]
+
+        if ":" in name:
+
+            name = name.split(":", 1)[1]
 
         print(
             f"{row['timestamp']:<20}"
             f"{row['state']:<6}"
-            f"{row['job_name']:<24}"
+            f"{name:<24}"
             f"{row['message']}"
         )
 
     print()
-
+    
 def version():
 
     banner()
@@ -758,8 +919,6 @@ def init():
 
     banner()
 
-    info = detect()
-
     print("Customer Setup")
     print("--------------")
 
@@ -767,22 +926,157 @@ def init():
     site = input("Site Name     : ").strip()
 
     print()
-    print("Detected Network")
-    print("----------------")
-    print(f"Interface : {info['interface']}")
-    print(f"IP        : {info['ip']}")
-    print(f"Prefix    : /{info['prefix']}")
-    print(f"Gateway   : {info['gateway']}")
-    print(f"DNS 1     : {info['dns'][0]}")
-    print(f"DNS 2     : {info['dns'][1]}")
-    print()
 
-    answer = input("Use these settings? (Y/N): ").lower()
+    detected = detect()
 
-    if not answer.startswith("y"):
+    if len(detected) == 0:
+
+        ui.error("No usable network interfaces were detected.")
+        print()
+        return
+
+    configured = []
+
+    networks = []
+
+    while True:
+
+        print("Detected Interfaces")
+        print("-------------------")
+        print()
+
+        available = []
+
+        index = 1
+
+        for interface in detected:
+
+            if interface["interface"] in configured:
+
+                continue
+
+            available.append(interface)
+
+            print(
+                f"{index}) "
+                f"{interface['interface']:<8}"
+                f"{interface['ip']}/{interface['prefix']}    "
+                f"Gateway: {interface['gateway']}"
+            )
+
+            index += 1
+
+        if len(available) == 0:
+
+            break
 
         print()
-        ui.warning("Cancelled.")
+
+        try:
+
+            selection = int(
+                input("Select interface: ").strip()
+            )
+
+        except ValueError:
+
+            print()
+            ui.error("Invalid selection.")
+            print()
+            continue
+
+        if (
+            selection < 1
+            or
+            selection > len(available)
+        ):
+
+            print()
+            ui.error("Invalid selection.")
+            print()
+            continue
+
+        info = available[selection - 1]
+
+        print()
+        print("Network Configuration")
+        print("---------------------")
+
+        network_name = input(
+            "Network Name : "
+        ).strip()
+
+        if network_name == "":
+
+            network_name = info["interface"]
+
+        gateway_name = input(
+            "Gateway Name : "
+        ).strip()
+
+        if gateway_name == "":
+
+            gateway_name = "Gateway"
+
+        print()
+        print("Detected Settings")
+        print("-----------------")
+        print(f"Interface : {info['interface']}")
+        print(f"IP        : {info['ip']}")
+        print(f"Prefix    : /{info['prefix']}")
+        print(f"Gateway   : {info['gateway']}")
+        print(f"DNS 1     : {info['dns'][0]}")
+        print(f"DNS 2     : {info['dns'][1]}")
+        print()
+
+        answer = input(
+            "Use these settings? (Y/N): "
+        ).strip().lower()
+
+        if not answer.startswith("y"):
+
+            print()
+            ui.warning("Interface skipped.")
+            print()
+            continue
+
+        configured.append(
+            info["interface"]
+        )
+
+        networks.append(
+            {
+                "id": len(networks) + 1,
+                "name": network_name,
+                "interface": info["interface"],
+                "ip": info["ip"],
+                "prefix": info["prefix"],
+                "gateway": info["gateway"],
+                "gateway_name": gateway_name,
+                "dns": info["dns"]
+            }
+        )
+
+        if len(configured) == len(detected):
+
+            break
+
+        print()
+
+        answer = input(
+            "Add another network? (Y/N): "
+        ).strip().lower()
+
+        print()
+
+        if not answer.startswith("y"):
+
+            break
+
+    if len(networks) == 0:
+
+        print()
+        ui.warning("Initialization cancelled.")
         print()
         return
 
@@ -791,14 +1085,7 @@ def init():
             "version": VERSION,
             "customer": customer,
             "site": site,
-            "network":
-            {
-                "interface": info["interface"],
-                "ip": info["ip"],
-                "prefix": info["prefix"],
-                "gateway": info["gateway"],
-                "dns": info["dns"]
-            },
+            "networks": networks,
             "tailscale": True
         }
     )
@@ -806,14 +1093,18 @@ def init():
     database.initialize()
 
     subprocess.run(
-        ["systemctl", "restart", "netmonitor"],
+        [
+            "systemctl",
+            "restart",
+            "netmonitor"
+        ],
         check=True
     )
 
     print()
     ui.success("Initialization complete.")
     print()
-
+    
 def reset():
 
     banner()
@@ -849,7 +1140,7 @@ def reset():
             "version": VERSION,
             "customer": "",
             "site": "",
-            "network": {},
+            "networks": [],
             "tailscale": True
         }
     )
@@ -870,7 +1161,7 @@ def reset():
     print("Select 'Initialize' from the Main Menu")
     print("to configure Scout for a new customer.")
     print()
-
+    
 def watch():
 
     print()

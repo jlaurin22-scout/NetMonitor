@@ -26,7 +26,62 @@ def dns_display_name(server):
 
     return "DNS"
 
+def add_network_monitors(
+    scheduler,
+    network,
+    settings
+):
 
+    gateway_name = network.get(
+        "gateway_name",
+        "Gateway"
+    )
+
+    internet_name = (
+        f"{network['name']} Internet"
+    )
+
+    dns_name = dns_display_name(
+        settings["dns"]["server"]
+    )
+
+    print("Adding Gateway monitor...")
+
+    scheduler.add_job({
+        "type": JOB_GATEWAY,
+        "name": gateway_name,
+        "network_id": network["id"],
+        "ip": network["gateway"],
+        "interval": settings["monitor"]["gateway_interval"]
+    })
+    
+    print("Adding Internet monitor...")
+
+    scheduler.add_job({
+        "type": JOB_INTERNET,
+        "name": internet_name,
+        "network_id": network["id"],
+        "targets": settings["internet"]["targets"],
+        "interval": settings["monitor"]["internet_interval"]
+    })
+    
+    print("Adding DNS monitor...")
+
+    scheduler.add_job({
+        "type": JOB_DNS,
+        "name": dns_name,
+        "network_id": network["id"],
+        "server": settings["dns"]["server"],
+        "lookup": settings["dns"]["lookup"],
+        "interval": settings["monitor"]["dns_interval"]
+    })
+    
+    return [
+        gateway_name,
+        internet_name,
+        dns_name
+    ]
+    
 def main():
 
     print()
@@ -43,7 +98,11 @@ def main():
     print("Loading configuration...")
     config = load()
 
-    if "gateway" not in config["customer"]["network"]:
+    if (
+        "networks" not in config["customer"]
+        or
+        len(config["customer"]["networks"]) == 0
+    ):
 
         print()
         print("NetMonitor has not been initialized.")
@@ -57,70 +116,70 @@ def main():
     customer = config["customer"]
     settings = config["settings"]
 
-    gateway_name = customer["network"].get(
-        "gateway_name",
-        "Gateway"
-    )
-
-    dns_name = dns_display_name(
-        settings["dns"]["server"]
-    )
+    networks = customer["networks"]
 
     scheduler = Scheduler()
 
-    print("Adding Gateway monitor...")
-    scheduler.add_job({
-        "type": JOB_GATEWAY,
-        "name": gateway_name,
-        "ip": customer["network"]["gateway"],
-        "interval": settings["monitor"]["gateway_interval"]
-    })
+    valid_jobs = []
 
-    print("Adding Internet monitor...")
-    scheduler.add_job({
-        "type": JOB_INTERNET,
-        "name": "Internet",
-        "targets": settings["internet"]["targets"],
-        "interval": settings["monitor"]["internet_interval"]
-    })
+    for network in networks:
 
-    print("Adding DNS monitor...")
-    scheduler.add_job({
-        "type": JOB_DNS,
-        "name": dns_name,
-        "server": settings["dns"]["server"],
-        "lookup": settings["dns"]["lookup"],
-        "interval": settings["monitor"]["dns_interval"]
-    })
+        print()
+        print(
+            f"Adding network monitor: {network['name']}"
+        )
+
+        network_jobs = add_network_monitors(
+            scheduler,
+            network,
+            settings
+        )
+
+        valid_jobs.extend(network_jobs)
+
+    print()
+
+    print()
 
     devices = get_devices()
-
-    valid_jobs = [
-        gateway_name,
-        "Internet",
-        dns_name
-    ]
-
+    
     valid_jobs.extend(
         device["name"] for device in devices
     )
 
     sync_status(valid_jobs)
 
-    print(f"Adding {len(devices)} device monitor(s)...")
+    print(
+        f"Adding {len(devices)} device monitor(s)..."
+    )
 
     for device in devices:
 
-        print(f"  - {device['name']} ({device['ip']})")
+        network_id = device.get(
+            "network_id",
+            1
+        )
+
+        print(
+            f"  - {device['name']} "
+            f"({device['ip']}) "
+            f"[Network {network_id}]"
+        )
+
+        job_name = (
+            f"{network_id}:"
+            f"{device['name']}"
+        )
 
         scheduler.add_job({
             "type": JOB_DEVICE,
-            "name": device["name"],
+            "name": job_name,
+            "network_id": network_id,
             "ip": device["ip"],
             "checks": device["checks"],
             "interval": settings["monitor"]["device_interval"]
         })
-
+        
     print()
     print("Engine started successfully.")
     print()

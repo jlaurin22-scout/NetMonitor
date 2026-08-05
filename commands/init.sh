@@ -105,24 +105,26 @@ done
 
 cat >/tmp/netmonitor.json <<EOF
 {
-    "version": "0.4.0",
+    "version": "0.5.0",
 
     "customer": "$CUSTOMER",
     "site": "$SITE",
 
-    "network": {
-        "interface": "$INTERFACE",
-        "ip": "$IP",
-        "prefix": $PREFIX,
-        "gateway": "$GATEWAY",
-        "gateway_name": "$ROUTERNAME",
-        "dns": [
-            "$DNS1",
-            "$DNS2"
-        ]
-    },
-
-    "devices": [],
+    "networks": [
+        {
+            "id": 1,
+            "name": "Primary",
+            "interface": "$INTERFACE",
+            "ip": "$IP",
+            "prefix": $PREFIX,
+            "gateway": "$GATEWAY",
+            "gateway_name": "$ROUTERNAME",
+            "dns": [
+                "$DNS1",
+                "$DNS2"
+            ]
+        }
+    ],
 
     "tailscale": true
 }
