@@ -28,6 +28,8 @@ def analyze():
         len(get_devices())
     )
     
+    report["incidents"] = incidents
+    
     build_statistics(
         report,
         incidents,

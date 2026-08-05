@@ -12,6 +12,7 @@ sys.path.insert(0, str(ENGINE_PATH))
 import config
 import database
 import ui
+from engine import analyzer
 from inventory.network import detect
 
 VERSION = "0.4.0"
@@ -40,11 +41,12 @@ def help_menu():
         print("3) Live Watch")
         print("4) Events")
         print("5) Incidents")
+        print("6) Scout Analysis")
         print()
-        print("6) Devices")
-        print("7) Service")
-        print("8) Version")
-        print("9) Reset")
+        print("7) Devices")
+        print("8) Service")
+        print("9) Version")
+        print("R) Reset")
         print()
         print("Q) Quit")
         print()
@@ -73,18 +75,22 @@ def help_menu():
 
         elif choice == "6":
             os.system("clear")
-            device_menu()
-            continue
+            scout_analysis()
 
         elif choice == "7":
             os.system("clear")
-            service()
+            device_menu()
+            continue
 
         elif choice == "8":
             os.system("clear")
-            version()
+            service()
 
         elif choice == "9":
+            os.system("clear")
+            version()
+
+        elif choice == "r":
             os.system("clear")
             subprocess.run(["nm", "reset"])
 
@@ -93,7 +99,6 @@ def help_menu():
             return
 
         input("\nPress Enter to continue...")
-        os.system("clear")
 
 def device_menu():
 
@@ -219,104 +224,118 @@ def device_list():
 
 def device_remove():
 
-    banner()
+    while True:
 
-    devices = config.get_devices()
+        banner()
 
-    if not devices:
+        devices = config.get_devices()
 
-        ui.warning("No monitored devices configured.")
-        print()
-        return
+        if not devices:
 
-    print(f"{'ID':<4} {'NAME':<25} {'IP ADDRESS'}")
-    print("-" * 55)
+            ui.warning("No monitored devices configured.")
+            print()
+            input("Press ENTER to continue...")
+            return
 
-    for device in devices:
-
-        print(
-            f"{device['id']:<4}"
-            f"{device['name']:<25}"
-            f"{device['ip']}"
-        )
-
-    print()
-
-    selection = input(
-        "Enter device ID(s) to remove (e.g. 2,5,8): "
-    ).strip()
-
-    if not selection:
-        return  
-
-    removed = 0
-
-    selected_devices = []
-
-    for item in selection.split(","):
-
-        try:
-            device_id = int(item.strip())
-
-        except ValueError:
-            continue
+        print(f"{'ID':<4} {'NAME':<25} {'IP ADDRESS'}")
+        print("-" * 55)
 
         for device in devices:
 
-            if device["id"] == device_id:
-                selected_devices.append(device)
-                break
-
-    if not selected_devices:
-
-        print()
-        ui.error("No valid devices selected.")
-        print()
-        return
-
-    print()
-    print("The following devices will be removed:")
-    print()
-
-    for device in selected_devices:
-
-        print(f"  {device['name']} ({device['ip']})")
-
-    print()
-
-    answer = input("Proceed? (Y/N): ").strip().lower()
-
-    if not answer.startswith("y"):
+            print(
+                f"{device['id']:<4}"
+                f"{device['name']:<25}"
+                f"{device['ip']}"
+            )
 
         print()
-        ui.warning("Cancelled.")
+
+        selection = input(
+            "Enter device ID(s) to remove (e.g. 2,5,8): "
+        ).strip()
+
+        if not selection:
+            return
+
+        removed = 0
+
+        selected_devices = []
+
+        for item in selection.split(","):
+
+            try:
+                device_id = int(item.strip())
+
+            except ValueError:
+                continue
+
+            for device in devices:
+
+                if device["id"] == device_id:
+                    selected_devices.append(device)
+                    break
+
+        if not selected_devices:
+
+            print()
+            ui.error("No valid devices selected.")
+            print()
+            input("Press ENTER to continue...")
+            continue
+
         print()
-        return
+        print("The following devices will be removed:")
+        print()
 
-    for selected in selected_devices:
+        for device in selected_devices:
 
-        config.remove_device(selected["id"])
-        database.remove_status(selected["name"])
-
-        ui.success(f"✓ Removed {selected['name']}")
-        removed += 1
-
-    if removed:
+            print(f"  {device['name']} ({device['ip']})")
 
         print()
-        ui.info("Restarting NetMonitor...")
 
-        subprocess.run(
-            ["systemctl", "restart", "netmonitor"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
+        answer = input("Proceed? (Y/N): ").strip().lower()
 
-        ui.success("Done.")
+        if not answer.startswith("y"):
 
-    print()
-    ui.success(f"{removed} device(s) removed.")
+            print()
+            ui.warning("Cancelled.")
+            print()
+            input("Press ENTER to continue...")
+            return
 
+        for selected in selected_devices:
+
+            config.remove_device(selected["id"])
+            database.remove_status(selected["name"])
+
+            ui.success(f"✓ Removed {selected['name']}")
+            removed += 1
+
+        if removed:
+
+            print()
+            ui.info("Restarting NetMonitor...")
+
+            subprocess.run(
+                ["systemctl", "restart", "netmonitor"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+
+            ui.success("Done.")
+
+        print()
+        ui.success(f"{removed} device(s) removed.")
+        print()
+
+        again = input(
+            "Remove another device? (Y/N): "
+        ).strip().lower()
+
+        if not again.startswith("y"):
+
+            return
+            
 def device_edit():
 
     banner()
@@ -561,7 +580,39 @@ def status():
 
     print()
 
+def clear_events():
 
+    banner()
+
+    print("Clear Event History")
+    print("===================")
+    print()
+
+    print("This will permanently delete:")
+    print("  • All recorded events")
+    print("  • All derived incidents")
+    print()
+
+    print("The following will NOT be affected:")
+    print("  ✓ Customer configuration")
+    print("  ✓ Site configuration")
+    print("  ✓ Device configuration")
+    print("  ✓ Current monitoring")
+    print()
+
+    answer = input("Type YES to continue: ")
+
+    if answer != "YES":
+
+        print()
+        print("Operation cancelled.")
+        return
+
+    database.clear_history()
+
+    print()
+    print("Event history successfully cleared.")
+    print("Scout will now begin recording a new history.")
 
 def events():
 
@@ -809,9 +860,17 @@ def main():
         return
 
     if args[0] == "events":
+
+        if len(args) > 1:
+
+            if args[1] == "clear":
+
+                clear_events()
+                return
+
         events()
         return
-
+        
     if args[0] == "incidents":
         incidents()
         return
@@ -887,5 +946,174 @@ def incidents():
 
         print()
 
+def scout_analysis():
+
+    banner()
+
+    report = analyzer.analyze()
+
+    print("Scout Analysis")
+    print("==============")
+    print()
+
+    print("Executive Summary")
+    print("-----------------")
+    print()
+
+    print(f"Overall Health : {report['health']}")
+    print()
+
+    if report["findings"]:
+
+        first = report["findings"][0]
+
+        print("Scout's Assessment")
+        print("------------------")
+        print()
+
+        if first["type"] == "INFRASTRUCTURE":
+
+            print(
+                "Scout detected a site-wide infrastructure outage."
+            )
+
+            print()
+
+            print(
+                f"{first['count']} monitored devices became "
+                "unreachable during the incident."
+            )
+
+            print(
+                "The event is consistent with a failure of the "
+                "gateway, core switch or site power."
+            )
+
+        elif first["type"] == "DEVICE":
+
+            print(
+                f"Scout identified {first['device']} as the "
+                "least reliable monitored device."
+            )
+
+            print()
+
+            print(
+                f"{first['count']} outage/recovery cycles have "
+                "been recorded."
+            )
+
+            print(
+                "No evidence currently suggests a wider network "
+                "problem."
+            )
+
+        print()
+
+        print("Recommended Investigation Order")
+        print("-------------------------------")
+        print()
+
+        for number, finding in enumerate(
+            report["top_findings"],
+            start=1
+        ):
+
+            if "device" in finding:
+
+                print(
+                    f"{number}. Inspect {finding['device']}"
+                )
+
+            else:
+
+                print(
+                    f"{number}. Investigate network infrastructure"
+                )
+
+        print()
+
+    print("Network Statistics")
+    print("------------------")
+    print()
+
+    print(f"Incidents              : {report['total_incidents']}")
+    print(f"Infrastructure Outages : {report['major_outages']}")
+    print(
+        f"Device Incidents       : "
+        f"{report['single_device'] + report['multi_device']}"
+    )
+    print(
+        f"Devices Monitored      : "
+        f"{report['devices_monitored']}"
+    )
+
+    if report["device_counter"]:
+
+        worst, count = report["device_counter"].most_common(1)[0]
+
+        print(
+            f"Worst Device           : "
+            f"{worst} ({count})"
+        )
+
+    print()
+
+    print("Device Reliability")
+    print("------------------")
+    print()
+
+    if report["device_reliability"]:
+
+        for device in report["device_reliability"]:
+
+            downtime = device["downtime"]
+
+            hours = downtime // 3600
+            minutes = (downtime % 3600) // 60
+            seconds = downtime % 60
+
+            if hours:
+
+                downtime_text = (
+                    f"{hours}h {minutes}m {seconds}s"
+                )
+
+            elif minutes:
+
+                downtime_text = (
+                    f"{minutes}m {seconds}s"
+                )
+
+            else:
+
+                downtime_text = (
+                    f"{seconds}s"
+                )
+
+            print(
+                f"{device['device']:<20} "
+                f"{device['score']:>3}%   "
+                f"{device['health']}"
+            )
+
+            print(
+                f"{'':20} "
+                f"Outages : {device['outages']}"
+            )
+
+            print(
+                f"{'':20} "
+                f"Downtime: {downtime_text}"
+            )
+
+            print()
+
+    else:
+
+        print("No reliability data available.")
+
+    print()
+    
 if __name__ == "__main__":
     main()

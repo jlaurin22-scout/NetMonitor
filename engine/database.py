@@ -114,6 +114,18 @@ def update_status(job_name, job_type, state):
     conn.close()
 
 
+def clear_history():
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM events")
+    cur.execute("DELETE FROM sqlite_sequence WHERE name='events'")
+
+    conn.commit()
+    conn.close()
+
+
 def get_current_status():
 
     conn = sqlite3.connect(DB)
@@ -145,6 +157,7 @@ def get_current_status():
 
     return rows
 
+
 def get_recent_events(limit=50):
 
     conn = sqlite3.connect(DB)
@@ -170,12 +183,14 @@ def get_recent_events(limit=50):
 
     return rows
 
+
 def get_incidents():
 
     rows = get_recent_events(1000)
 
     return build_incidents(rows)
-    
+
+
 def remove_status(job_name):
 
     conn = sqlite3.connect(DB)
@@ -192,6 +207,7 @@ def remove_status(job_name):
 
     conn.commit()
     conn.close()
+
 
 def cleanup_device_status(valid_devices):
 
@@ -221,6 +237,7 @@ def cleanup_device_status(valid_devices):
 
     conn.commit()
     conn.close()
+
 
 def sync_device_status(valid_devices):
 

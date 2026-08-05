@@ -44,9 +44,25 @@ def build_incidents(rows):
             if current and not active:
 
                 current["end"] = row["timestamp"]
-                raw.append(current)
-                current = None
 
+                start = datetime.strptime(
+                    current["start"],
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                end = datetime.strptime(
+                    current["end"],
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                current["duration"] = int(
+                    (end - start).total_seconds()
+                )
+
+                raw.append(current)
+
+                current = None
+                
     if not raw:
 
         return []
@@ -71,10 +87,12 @@ def build_incidents(rows):
 
             previous["end"] = incident["end"]
 
+            previous["duration"] += incident["duration"]
+
             previous["objects"].update(
                 incident["objects"]
             )
-
+            
         else:
 
             incidents.append(incident)
