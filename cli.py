@@ -44,8 +44,9 @@ def help_menu():
         print("6) Scout Analysis")
         print()
         print("7) Devices")
-        print("8) Service")
-        print("9) Version")
+        print("8) Configuration")
+        print("9) Service")
+        print("V) Version")
         print("R) Reset")
         print()
         print("Q) Quit")
@@ -84,12 +85,17 @@ def help_menu():
 
         elif choice == "8":
             os.system("clear")
-            service()
+            configuration_menu()
+            continue
 
         elif choice == "9":
             os.system("clear")
-            version()
+            service()
 
+        elif choice == "v":
+            os.system("clear")
+            version()
+            
         elif choice == "r":
             os.system("clear")
             subprocess.run(["nm", "reset"])
@@ -100,6 +106,54 @@ def help_menu():
 
         input("\nPress Enter to continue...")
 
+def configuration_menu():
+
+    os.system("clear")
+
+    while True:
+
+        banner()
+
+        print("Configuration")
+        print("-------------")
+        print()
+        print("1) Customer Name")
+        print("2) Site Name")
+        print("3) Router Name")
+        print()
+        print("B) Back")
+        print()
+
+        choice = input("Selection: ").strip().lower()
+
+        if choice == "1":
+
+            print()
+            print("Coming soon.")
+
+        elif choice == "2":
+
+            print()
+            print("Coming soon.")
+
+        elif choice == "3":
+
+            print()
+            print("Coming soon.")
+            
+        elif choice == "b":
+
+            os.system("clear")
+            return
+
+        else:
+
+            print()
+            print("Invalid selection.")
+
+        input("\nPress Enter to continue...")
+        os.system("clear")
+        
 def device_menu():
 
     os.system("clear")
@@ -537,6 +591,11 @@ def status():
 
     customer = config.load_customer()
 
+    gateway_name = customer["network"].get(
+        "gateway_name",
+        "Gateway"
+    )
+
     print("Customer")
     print("--------")
     print(f"Customer : {customer.get('customer','Unknown')}")
@@ -568,6 +627,10 @@ def status():
 
         name = row["job_name"]
 
+        if name == "Gateway":
+
+            name = gateway_name
+
         if len(name) > 25:
             name = name[:22] + "..."
 
@@ -579,7 +642,7 @@ def status():
         )
 
     print()
-
+    
 def clear_events():
 
     banner()
@@ -634,7 +697,6 @@ def events():
 
     print()
 
-
 def version():
 
     banner()
@@ -652,7 +714,6 @@ def version():
     print(f"Build   : {build}")
     print(f"Engine  : {service}")
     print()
-
 
 def service():
 

@@ -33,6 +33,11 @@ echo
 
 read -p "Customer Name : " CUSTOMER
 read -p "Site          : " SITE
+read -p "Router Name [Gateway] : " ROUTERNAME
+
+if [ -z "$ROUTERNAME" ]; then
+    ROUTERNAME="Gateway"
+fi
 
 echo
 echo "Detected Network"
@@ -110,6 +115,7 @@ cat >/tmp/netmonitor.json <<EOF
         "ip": "$IP",
         "prefix": $PREFIX,
         "gateway": "$GATEWAY",
+        "gateway_name": "$ROUTERNAME",
         "dns": [
             "$DNS1",
             "$DNS2"

@@ -239,7 +239,7 @@ def cleanup_device_status(valid_devices):
     conn.close()
 
 
-def sync_device_status(valid_devices):
+def sync_status(valid_jobs):
 
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
@@ -247,12 +247,11 @@ def sync_device_status(valid_devices):
     cur.execute("""
         SELECT job_name
         FROM current_status
-        WHERE job_type='device'
     """)
 
     rows = cur.fetchall()
 
-    valid = set(valid_devices)
+    valid = set(valid_jobs)
 
     for row in rows:
 

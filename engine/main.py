@@ -4,13 +4,27 @@ import time
 from notify import send_startup_ip
 from scheduler import Scheduler
 from config import load, get_devices
-from database import initialize, sync_device_status
+from database import initialize, sync_status
 from constants import (
     JOB_GATEWAY,
     JOB_INTERNET,
     JOB_DNS,
     JOB_DEVICE
 )
+
+
+def dns_display_name(server):
+
+    if server in ("1.1.1.1", "1.0.0.1"):
+        return "Cloudflare DNS"
+
+    if server in ("8.8.8.8", "8.8.4.4"):
+        return "Google DNS"
+
+    if server == "9.9.9.9":
+        return "Quad9 DNS"
+
+    return "DNS"
 
 
 def main():
@@ -42,13 +56,22 @@ def main():
 
     customer = config["customer"]
     settings = config["settings"]
-    
+
+    gateway_name = customer["network"].get(
+        "gateway_name",
+        "Gateway"
+    )
+
+    dns_name = dns_display_name(
+        settings["dns"]["server"]
+    )
+
     scheduler = Scheduler()
 
     print("Adding Gateway monitor...")
     scheduler.add_job({
         "type": JOB_GATEWAY,
-        "name": "Gateway",
+        "name": gateway_name,
         "ip": customer["network"]["gateway"],
         "interval": settings["monitor"]["gateway_interval"]
     })
@@ -64,7 +87,7 @@ def main():
     print("Adding DNS monitor...")
     scheduler.add_job({
         "type": JOB_DNS,
-        "name": "DNS",
+        "name": dns_name,
         "server": settings["dns"]["server"],
         "lookup": settings["dns"]["lookup"],
         "interval": settings["monitor"]["dns_interval"]
@@ -72,9 +95,17 @@ def main():
 
     devices = get_devices()
 
-    sync_device_status(
-         [device["name"] for device in devices]
+    valid_jobs = [
+        gateway_name,
+        "Internet",
+        dns_name
+    ]
+
+    valid_jobs.extend(
+        device["name"] for device in devices
     )
+
+    sync_status(valid_jobs)
 
     print(f"Adding {len(devices)} device monitor(s)...")
 
