@@ -3,6 +3,7 @@ from collections import Counter
 from database import get_incidents, get_recent_events
 from config import get_devices
 from analysis.health import calculate_health
+from analysis.summary import build_summary
 
 MAJOR_OUTAGE_THRESHOLD = 10
 
@@ -192,66 +193,6 @@ def analyze():
 
     report["top_findings"] = report["findings"][:3]
 
-    if report["findings"]:
-
-        first = report["findings"][0]
-
-        if first["type"] == "INFRASTRUCTURE":
-
-            report["executive_summary"]["headline"] = (
-                "Site-wide infrastructure outage detected."
-            )
-
-            report["executive_summary"]["assessment"] = [
-
-                (
-                    f"{first['count']} monitored devices became "
-                    "unreachable."
-                ),
-
-                (
-                    "The outage is consistent with a gateway, "
-                    "core switch or power failure."
-                )
-
-            ]
-
-        elif first["type"] == "DEVICE":
-
-            report["executive_summary"]["headline"] = (
-                f"{first['device']} requires immediate attention."
-            )
-
-            report["executive_summary"]["assessment"] = [
-
-                (
-                    f"{first['count']} outage/recovery cycles "
-                    "were recorded."
-                ),
-
-                (
-                    "No evidence currently indicates a wider "
-                    "network problem."
-                )
-
-            ]
-
-        for finding in report["top_findings"]:
-
-            if "device" in finding:
-
-                report["executive_summary"][
-                    "investigation_order"
-                ].append(
-                    f"Inspect {finding['device']}"
-                )
-
-            else:
-
-                report["executive_summary"][
-                    "investigation_order"
-                ].append(
-                    "Investigate network infrastructure"
-                )
-
+    build_summary(report)
+    
     return report
