@@ -8,6 +8,7 @@ from analysis.statistics import build_statistics
 from analysis.findings import build_findings
 from analysis.report import create_report
 from analysis.reliability import calculate_reliability
+from analysis.ranking import rank_findings
 
 MAJOR_OUTAGE_THRESHOLD = 10
 
@@ -37,8 +38,10 @@ def analyze():
 
     build_findings(report)
 
+    rank_findings(report)
+
     calculate_reliability(report)
 
     build_summary(report)
-
+    
     return report
