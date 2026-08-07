@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from constants import STATE_DOWN
+from engine.constants import STATE_DOWN
 
 
 def classify(status):

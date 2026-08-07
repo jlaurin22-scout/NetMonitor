@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sqlite3
-from analysis.incidents import build_incidents
+from engine.analysis.incidents import build_incidents
 from datetime import datetime
 
 DB = "/var/lib/netmonitor/netmonitor.db"

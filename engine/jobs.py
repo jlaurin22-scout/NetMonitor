@@ -2,15 +2,15 @@
 
 from datetime import datetime
 
-from network import (
+from engine.network import (
     ping,
     dns_lookup
 )
 
-from state import update, current
-from classifier import classify
-from database import add_event, update_status
-from constants import STATE_UP, STATE_DOWN
+from engine.state import update, current
+from engine.classifier import classify
+from engine.database import add_event, update_status
+from engine.constants import STATE_UP, STATE_DOWN
 
 
 def event(job, state, duration):

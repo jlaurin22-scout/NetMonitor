@@ -67,15 +67,25 @@ def save_customer(data):
 
 def load_devices():
 
-    with open(DEVICES_CONFIG, "r") as f:
-        return json.load(f)
+    if not os.path.exists(DEVICES_CONFIG):
 
+        data = {
+            "devices": []
+        }
+
+        save_devices(data)
+
+        return data
+
+    with open(DEVICES_CONFIG, "r") as f:
+
+        return json.load(f)
 
 def save_devices(data):
 
     with open(DEVICES_CONFIG, "w") as f:
-        json.dump(data, f, indent=4)
 
+        json.dump(data, f, indent=4)
 
 def get_devices():
 
@@ -93,7 +103,7 @@ def get_devices():
         device.setdefault("network_id", 1)
 
     return devices
-
+        
 def add_device(
     name,
     ip,
@@ -241,9 +251,35 @@ def remove_device(device_id):
 
 def load_settings():
 
-    with open(SETTINGS_CONFIG, "r") as f:
-        return json.load(f)
+    if not os.path.exists(SETTINGS_CONFIG):
 
+        data = {
+            "monitor": {
+                "gateway_interval": 30,
+                "internet_interval": 30,
+                "dns_interval": 30,
+                "device_interval": 60
+            },
+            "internet": {
+                "targets": [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ]
+            },
+            "dns": {
+                "server": "1.1.1.1",
+                "lookup": "google.com"
+            }
+        }
+        with open(SETTINGS_CONFIG, "w") as f:
+
+            json.dump(data, f, indent=4)
+
+        return data
+
+    with open(SETTINGS_CONFIG, "r") as f:
+
+        return json.load(f)
 
 #
 # Combined configuration

@@ -5,6 +5,9 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+from commands.version import version
+from commands.service import service
+from commands.status import status
 
 ENGINE_PATH = Path(__file__).parent / "engine"
 sys.path.insert(0, str(ENGINE_PATH))
@@ -728,59 +731,6 @@ def device_scan():
     print()
     print(f"{added} device(s) added.")
 
-def status():
-
-    banner()
-
-    customer = config.load_customer()
-
-    print("Customer")
-    print("--------")
-    print(f"Customer : {customer.get('customer','Unknown')}")
-    print(f"Site     : {customer.get('site','Unknown')}")
-    print()
-
-    service = subprocess.run(
-        ["systemctl","is-active","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    print("Service")
-    print("-------")
-
-    service_state = "UP" if service.strip() == "active" else "DOWN"
-    print(f"Status   : {ui.state(service_state)}")
-
-    print()
-    print("Current Status")
-    print("--------------")
-
-    rows = database.get_current_status()
-
-    print(f"{'NAME':<25} {'TYPE':<10} {'STATE':<18} LAST CHANGE")
-    print("-" * 75)
-
-    for row in rows:
-
-        name = row["job_name"]
-
-        if ":" in name:
-
-            name = name.split(":", 1)[1]
-
-        if len(name) > 25:
-
-            name = name[:22] + "..."
-
-        print(
-            f"{name:<25}"
-            f"{row['job_type']:<10}"
-            f"{ui.state(row['state']):<18}"
-            f"{row['last_change']}"
-        )
-
-    print()
     
 def clear_events():
 
@@ -858,63 +808,6 @@ def events(limit=50):
 
     print()
     
-def version():
-
-    banner()
-
-    version = Path(VERSION_FILE).read_text().strip()
-    build = Path(BUILD_FILE).read_text().strip()
-
-    service = subprocess.run(
-        ["systemctl","is-active","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    print(f"Version : {version}")
-    print(f"Build   : {build}")
-    print(f"Engine  : {service}")
-    print()
-
-def service():
-
-    banner()
-
-    active = subprocess.run(
-        ["systemctl","is-active","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    enabled = subprocess.run(
-        ["systemctl","is-enabled","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    pid = subprocess.run(
-        ["systemctl","show","-p","MainPID","--value","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    uptime = subprocess.run(
-        ["systemctl","show","-p","ActiveEnterTimestamp","--value","netmonitor"],
-        capture_output=True,
-        text=True
-    ).stdout.strip()
-
-    print("NetMonitor Service")
-    print("------------------")
-
-    status = "UP" if active == "active" else "DOWN"
-    print(f"Status  : {ui.state(status)}")
-    enabled_state = "UP" if enabled == "enabled" else "DOWN"
-    print(f"Enabled : {ui.state(enabled_state)}")
-    print(f"PID     : {pid}")
-    print(f"Started : {uptime}")
-    print()
-
 def init():
 
     banner()
@@ -1090,7 +983,67 @@ def init():
         }
     )
 
+    Path("/var/lib/netmonitor").mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
     database.initialize()
+
+    service_file = "/etc/systemd/system/netmonitor.service"
+
+    if not Path(service_file).exists():
+
+        ui.error(
+            "NetMonitor service is not installed."
+        )
+        print()
+        ui.info(
+            "Service installation will be added in the next step."
+        )
+        print()
+        return
+
+    service_file = Path(
+        "/etc/systemd/system/netmonitor.service"
+    )
+
+    service_file.write_text(
+        """[Unit]
+Description=Scout Network Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/watchdog/NetMonitor
+ExecStart=/usr/bin/python3 -m engine.main
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+"""
+    )
+
+    subprocess.run(
+        [
+            "systemctl",
+            "daemon-reload"
+        ],
+        check=True
+    )
+
+    subprocess.run(
+        [
+            "systemctl",
+            "enable",
+            "netmonitor"
+        ],
+        check=True
+    )
 
     subprocess.run(
         [
@@ -1100,7 +1053,6 @@ def init():
         ],
         check=True
     )
-
     print()
     ui.success("Initialization complete.")
     print()
