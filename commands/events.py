@@ -5,8 +5,6 @@ from engine import database
 
 def clear_events():
 
-    banner()
-
     print("Clear Event History")
     print("===================")
     print()
@@ -38,8 +36,6 @@ def clear_events():
     print("Scout will now begin recording a new history.")
 
 def events(limit=50):
-
-    banner()
 
     print("Recent Events")
     print("-------------")
@@ -82,8 +78,6 @@ def events(limit=50):
 def incidents():
 
     from datetime import datetime
-
-    banner()
 
     incidents = database.get_incidents()
 

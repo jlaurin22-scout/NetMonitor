@@ -60,12 +60,11 @@ def help_menu():
         print("2) Status")
         print("3) Live Watch")
         print("4) Events")
-        print("5) Incidents")
-        print("6) Scout Analysis")
+        print("5) Scout Analysis")
         print()
-        print("7) Devices")
-        print("8) Configuration")
-        print("9) Service")
+        print("6) Devices")
+        print("7) Configuration")
+        print("8) Service")
         print("V) Version")
         print("R) Reset")
         print()
@@ -91,36 +90,70 @@ def help_menu():
 
         elif choice == "4":
 
-            os.system("clear")
-            events()
+            while True:
 
+                os.system("clear")
+
+                banner()
+
+                print("Events")
+                print("------")
+                print()
+                print("1) View Recent Events")
+                print("2) View Incidents")
+                print("3) Clear Event History")
+                print()
+                print("0) Back")
+                print()
+
+                event_choice = input(
+                    "Selection: "
+                ).strip()
+
+                if event_choice == "1":
+
+                    os.system("clear")
+                    events()
+                    input("\nPress Enter to continue...")
+
+                elif event_choice == "2":
+
+                    os.system("clear")
+                    incidents()
+                    input("\nPress Enter to continue...")
+
+                elif event_choice == "3":
+
+                    os.system("clear")
+                    clear_events()
+                    input("\nPress Enter to continue...")
+
+                elif event_choice == "0":
+
+                    break      
+                    
         elif choice == "5":
-
-            os.system("clear")
-            incidents()
-
-        elif choice == "6":
 
             os.system("clear")
             scout_analysis()
 
-        elif choice == "7":
+        elif choice == "6":
 
             os.system("clear")
             device_menu()
             continue
 
-        elif choice == "8":
+        elif choice == "7":
 
             os.system("clear")
             configuration_menu()
             continue
 
-        elif choice == "9":
+        elif choice == "8":
 
             os.system("clear")
-            service()
-
+            service()        
+        
         elif choice == "v":
 
             os.system("clear")
@@ -136,7 +169,9 @@ def help_menu():
             os.system("clear")
             return
 
-        input("\nPress Enter to continue...")
+        if choice not in ("4", "7", "8", "q"):
+
+            input("\nPress Enter to continue...")
         
 def configuration_menu():
 
