@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from inventory import fingerprints
 
 def enrich(device):
 
@@ -36,6 +37,40 @@ def enrich(device):
         return
 
     #
+    # Fingerprints
+    #
+    server = device.http_server.lower()
+    title = device.http_title.lower()
+
+    values = {
+
+        "vendor": vendor,
+        "hostname": hostname,
+        "http_server": server,
+        "http_title": title,
+        "description": description,
+
+    }
+
+    for fingerprint in fingerprints.FINGERPRINTS:
+
+        matched = True
+
+        for key, value in fingerprint.items():
+
+            if key == "type":
+                continue
+
+            if value not in values.get(key, ""):
+
+                matched = False
+                break
+
+        if matched:
+
+            device.device_type = fingerprint["type"]
+            return
+
     # Hostname based
     #
 
@@ -71,7 +106,7 @@ def enrich(device):
     # Vendor based
     #
 
-    if vendor == "qnap":
+    if "qnap" in vendor:
         device.device_type = "NAS"
         return
 
@@ -79,8 +114,28 @@ def enrich(device):
         device.device_type = "Access Point"
         return
 
-    if vendor == "vmware":
+    if "vmware" in vendor:
         device.device_type = "Virtual Machine"
+        return
+
+    if "avm" in vendor:
+        device.device_type = "Router"
+        return
+
+    if "devolo" in vendor:
+        device.device_type = "Powerline"
+        return
+
+    if "d-link" in vendor:
+        device.device_type = "Switch"
+        return
+
+    if "asus" in vendor and hostname.startswith("wks"):
+        device.device_type = "Windows PC"
+        return
+
+    if "intel" in vendor and hostname.startswith("miner"):
+        device.device_type = "Linux Miner"
         return
 
     #

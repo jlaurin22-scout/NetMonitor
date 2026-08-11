@@ -11,29 +11,68 @@ VENDORS = {}
 
 def load_database():
     """
-    Load the local OUI database.
+    Load the OUI database.
+
+    Preference:
+      1. Debian ieee-data package
+      2. Local bundled database
     """
 
-    csv_file = Path(__file__).parent / "data" / "oui.csv"
+    candidates = [
+        Path("/usr/share/ieee-data/oui.csv"),
+        Path("/var/lib/ieee-data/oui.csv"),
+        Path(__file__).parent / "data" / "oui.csv"
+    ]
 
-    if not csv_file.exists():
+    csv_file = None
+
+    for candidate in candidates:
+
+        if candidate.exists():
+
+            csv_file = candidate
+            break
+
+    if csv_file is None:
         return
 
     with open(csv_file, newline="", encoding="utf-8") as f:
 
         reader = csv.reader(f)
 
+        #
+        # Skip header if present
+        #
+        next(reader, None)
+
         for row in reader:
 
-            if len(row) != 2:
+            #
+            # Debian ieee-data format:
+            # Registry,Assignment,Organization Name,...
+            #
+            if len(row) >= 3:
+
+                oui = row[1].strip().upper()
+                vendor = row[2].strip()
+
+            #
+            # Legacy bundled format:
+            # OUI,Vendor
+            #
+            elif len(row) == 2:
+
+                oui = row[0].strip().upper()
+                vendor = row[1].strip()
+
+            else:
+
                 continue
 
-            oui = row[0].strip().upper()
-            vendor = row[1].strip()
+            oui = oui.replace("-", "").replace(":", "")
 
             VENDORS[oui] = vendor
-
-
+            
 def lookup(mac):
     """
     Return the vendor for a MAC address.

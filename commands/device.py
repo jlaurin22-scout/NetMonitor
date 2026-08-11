@@ -17,7 +17,7 @@ def add_monitored_device(name, ip, ping=True, snmp=False):
 
 def device_add():
 
-    banner()
+    ui.banner()
 
     print("Add Monitored Device")
     print("--------------------")
@@ -56,7 +56,7 @@ def device_add():
 
 def device_list():
 
-    banner()
+    ui.banner()
 
     devices = config.get_devices()
 
@@ -81,7 +81,7 @@ def device_list():
     
 def network_list():
 
-    banner()
+    ui.banner()
 
     networks = config.get_networks()
 
@@ -115,7 +115,7 @@ def device_remove():
 
     while True:
 
-        banner()
+        ui.banner()
 
         devices = config.get_devices()
 
@@ -227,7 +227,7 @@ def device_remove():
             
 def device_edit():
 
-    banner()
+    ui.banner()
 
     devices = config.get_devices()
 
@@ -340,30 +340,30 @@ def device_scan():
     devices = scanner.scan()
 
     if not devices:
+
         ui.warning("No devices found.")
         return
 
     print(
         f"{'#':>2} "
         f"{'IP Address':15} "
+        f"{'Vendor':40} "
         f"{'Hostname':22} "
-        f"{'Type':18} "
-        f"{'SNMP':5}"
+        f"{'Type':18}"
     )
 
-    print("-" * 70)
+    print("-" * 105)
 
     for i, device in enumerate(devices, 1):
-
-        snmp = "Yes" if device.snmp else "No"
 
         print(
             f"{i:>2} "
             f"{device.ip:15} "
+            f"{device.vendor[:40]:40} "
             f"{device.hostname[:22]:22} "
-            f"{device.device_type[:18]:18} "
-            f"{snmp:5}"
+            f"{device.device_type[:18]:18}"
         )
+
     print()
 
     selection = input(
@@ -378,6 +378,7 @@ def device_scan():
     for item in selection.split(","):
 
         try:
+
             index = int(item.strip()) - 1
 
             if index < 0 or index >= len(devices):
@@ -385,10 +386,21 @@ def device_scan():
 
             device = devices[index]
 
-            name = device.hostname.strip()
+            default_name = device.hostname.strip()
 
-            if not name or name.lower() == "unknown":
-                name = device.ip
+            if not default_name or default_name.lower() == "unknown":
+                default_name = device.ip
+
+            print()
+
+            name = input(
+                f"Name [{default_name}]: "
+            ).strip()
+
+            if not name:
+                name = default_name
+
+            print(f"DEBUG: Adding '{name}' ({device.ip})")
 
             add_monitored_device(
                 name=name,
@@ -397,16 +409,28 @@ def device_scan():
                 snmp=device.snmp
             )
 
+            print("DEBUG: Device added")
+            
             ui.success(f"✓ Added {name}")
 
             added += 1
 
         except Exception as e:
+
+            import traceback
+
+            traceback.print_exc()
+
+            print()
+
             ui.error(str(e))
 
+            input("Press ENTER...")
+            
     if added:
 
         print()
+
         ui.info("Restarting NetMonitor...")
 
         subprocess.run(
@@ -419,4 +443,3 @@ def device_scan():
 
     print()
     print(f"{added} device(s) added.")
-

@@ -9,10 +9,18 @@ from inventory.executor import Executor
 
 def scan():
 
-    info = detect()
+    networks = detect()
 
-    alive = scan_network(info["network"])
+    alive = []
 
+    for network in networks:
+
+        alive.extend(
+            scan_network(
+                network["network"]
+            )
+        )
+        
     devices = []
 
     for host in alive:

@@ -29,10 +29,10 @@ from setup.installer import run as install_appliance
 ENGINE_PATH = Path(__file__).parent / "engine"
 sys.path.insert(0, str(ENGINE_PATH))
 
-# import config
-# import database
+import config
+import database
 import ui
-from engine import analyzer
+
 # from inventory.network import detect
 
 VERSION = "0.4.0"
@@ -312,21 +312,27 @@ def device_menu():
             device_list()
 
         elif choice == "2":
-            os.system("clear")
-            subprocess.run(["nm", "device", "scan"])
 
+            os.system("clear")
+            device_scan()
+            os.system("clear")
+            continue
+            
         elif choice == "3":
-            os.system("clear")
-            subprocess.run(["nm", "device", "add"])
 
+            os.system("clear")
+            device_add()
+            
         elif choice == "4":
-            os.system("clear")
-            subprocess.run(["nm", "device", "edit"])
 
+            os.system("clear")
+            device_edit()
+            
         elif choice == "5":
-            os.system("clear")
-            subprocess.run(["nm", "device", "remove"])
 
+            os.system("clear")
+            device_remove()
+            
         elif choice == "b":
             os.system("clear")
             return

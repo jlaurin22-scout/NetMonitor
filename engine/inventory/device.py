@@ -30,6 +30,18 @@ class Device:
         self.ports = []
 
         #
+        # HTTP
+        #
+        self.http_server = ""
+        self.http_title = ""
+        self.http_protocol = ""
+
+        #
+        # SSH
+        #
+        self.ssh_banner = ""
+
+        #
         # Classification
         #
         self.device_type = "Unknown"
@@ -60,21 +72,32 @@ class Device:
     def to_dict(self):
 
         return {
+
             "ip": self.ip,
             "mac": self.mac,
             "hostname": self.hostname,
             "vendor": self.vendor,
             "response": self.response,
             "ports": self.ports,
+
+            "http_server": self.http_server,
+            "http_title": self.http_title,
+            "http_protocol": self.http_protocol,
+
+            "ssh_banner": self.ssh_banner,
+
             "device_type": self.device_type,
+
             "snmp": self.snmp,
             "description": self.description,
             "uptime": self.uptime,
             "contact": self.contact,
             "location": self.location,
+
             "model": self.model,
             "firmware": self.firmware,
             "serial": self.serial,
+
         }
 
     def __repr__(self):

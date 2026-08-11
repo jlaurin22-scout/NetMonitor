@@ -76,14 +76,13 @@ def detect():
 
         #
         # If there is no default gateway on this interface,
-        # use the first usable address in the subnet.
+        # leave it empty. The initialization wizard will ask
+        # the user for the correct gateway.
         #
         if gateway == "":
 
-            gateway = str(
-                list(interface.network.hosts())[0]
-            )
-
+            gateway = ""
+            
         networks.append(
             {
                 "interface": interface_name,

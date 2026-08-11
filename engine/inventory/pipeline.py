@@ -4,6 +4,8 @@ from inventory import arp
 from inventory import vendor
 from inventory import hostname
 from inventory import ports
+from inventory import http
+from inventory import ssh
 from inventory import classifier
 from inventory.snmp import enrich
 
@@ -17,6 +19,8 @@ class Pipeline:
             vendor,
             hostname,
             ports,
+            http,
+            ssh,
             enrich,
             classifier,
         ]
