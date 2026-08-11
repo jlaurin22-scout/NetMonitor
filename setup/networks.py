@@ -115,9 +115,9 @@ def run():
         print(f"Interface : {info['interface']}")
         print(f"IP        : {info['ip']}")
         print(f"Prefix    : /{info['prefix']}")
-        print(f"Gateway   : {info['gateway']}")
-        print(f"DNS 1     : {info['dns'][0]}")
-        print(f"DNS 2     : {info['dns'][1]}")
+        print(f"Gateway   : {gateway}")
+        print(f"DNS 1     : {gateway}")
+        print("DNS 2     : 1.1.1.1")
         print()
 
         answer = input(
@@ -142,7 +142,10 @@ def run():
                 "prefix": info["prefix"],
                 "gateway": gateway,
                 "gateway_name": gateway_name,
-                "dns": info["dns"]
+                "dns": [
+                    gateway,
+                    "1.1.1.1"
+                ]
             }
         )
 
@@ -161,4 +164,5 @@ def run():
             break
 
     return networks
+
 
