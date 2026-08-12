@@ -92,4 +92,57 @@ FINGERPRINTS = [
         "vendor": "d-link",
     },
 
+    #
+    # Hostname fingerprints
+    #
+
+    {
+        "type": "Firewall",
+        "hostname": "opnsense",
+    },
+
+    {
+        "type": "Windows Server",
+        "hostname": "srv",
+    },
+
+    {
+        "type": "Camera",
+        "hostname": "kamera",
+    },
+
+    {
+        "type": "Switch",
+        "hostname": "switch",
+    },
+
+    {
+        "type": "Printer",
+        "hostname": "printer",
+    },
+
+    {
+        "type": "Powerline",
+        "hostname": "devolo",
+    },
+
+    {
+        "type": "Pi-hole",
+        "hostname": "pihole",
+    },
+
+    {
+        "type": "NetMonitor",
+        "hostname": "net-monitor",
+    },
+
+    {
+        "type": "Watchdog",
+        "hostname": "watchdog",
+    },
+
+    {
+        "type": "Linux Miner",
+        "hostname": "miner",
+    },
 ]

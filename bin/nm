@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /home/watchdog/NetMonitor
+
+if [ "$EUID" -ne 0 ]; then
+    exec sudo python3 cli.py "$@"
+fi
+
+exec python3 cli.py "$@"

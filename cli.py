@@ -9,13 +9,20 @@ from pathlib import Path
 from commands.version import version
 from commands.service import service
 from commands.status import status
-from commands.device import (
-    device_add,
-    device_edit,
-    device_list,
-    device_remove,
+from commands.device.add import device_add
+
+from commands.device.list import device_list
+
+from commands.device.network import network_list
+
+from commands.device.edit import device_edit
+
+from commands.device.remove import device_remove
+
+from commands.device_old import (
     device_scan,
 )
+
 from commands.events import (
     clear_events,
     events,
@@ -350,6 +357,9 @@ def device_menu():
 
             os.system("clear")
             device_scan()
+
+            input("\nPress Enter to continue...")
+
             os.system("clear")
             continue
             

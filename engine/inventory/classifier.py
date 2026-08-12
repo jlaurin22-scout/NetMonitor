@@ -71,37 +71,6 @@ def enrich(device):
             device.device_type = fingerprint["type"]
             return
 
-    # Hostname based
-    #
-
-    if "opnsense" in hostname:
-        device.device_type = "Firewall"
-        return
-
-    if hostname.startswith("srv"):
-        device.device_type = "Windows Server"
-        return
-
-    if "kamera" in hostname:
-        device.device_type = "Camera"
-        return
-
-    if "switch" in hostname:
-        device.device_type = "Switch"
-        return
-
-    if "printer" in hostname:
-        device.device_type = "Printer"
-        return
-
-    if "devolo" in hostname:
-        device.device_type = "Powerline"
-        return
-
-    if "net-monitor" in hostname:
-        device.device_type = "NetMonitor"
-        return
-
     #
     # Vendor based
     #
