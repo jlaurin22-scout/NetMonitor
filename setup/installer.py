@@ -6,7 +6,9 @@ from pathlib import Path
 from engine import database
 
 
-SERVICE = """[Unit]
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+
+SERVICE = f"""[Unit]
 Description=Scout Network Monitor
 After=network-online.target
 Wants=network-online.target
@@ -14,7 +16,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/home/watchdog/NetMonitor
+WorkingDirectory={PROJECT_DIR}
 ExecStart=/usr/bin/python3 -m engine.main
 Restart=always
 RestartSec=5
@@ -27,7 +29,9 @@ WantedBy=multi-user.target
 
 def run():
 
-    Path("/var/lib/netmonitor").mkdir(
+    Path(
+        "/var/lib/netmonitor"
+    ).mkdir(
         parents=True,
         exist_ok=True
     )
