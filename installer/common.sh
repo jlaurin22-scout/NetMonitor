@@ -26,3 +26,77 @@ require_root()
         exit 1
     fi
 }
+
+select_installation_type()
+{
+    echo "Select installation type:"
+    echo
+    echo "  1) New installation"
+    echo "  2) Update existing installation"
+    echo
+
+    while true; do
+
+        read -r -p "Selection [1/2]: " INSTALL_TYPE
+
+        case "$INSTALL_TYPE" in
+
+            1)
+                echo
+                echo "WARNING: New installation will remove the existing"
+                echo "NetMonitor configuration and monitoring database."
+                echo
+
+                read -r -p "Continue with new installation? [y/N]: " ANSWER
+
+                case "$ANSWER" in
+                    y|Y|yes|YES|Yes)
+                        INSTALL_MODE="new"
+                        return
+                        ;;
+                    *)
+                        echo
+                        echo "Installation cancelled."
+                        exit 0
+                        ;;
+                esac
+                ;;
+
+            2)
+                INSTALL_MODE="update"
+                return
+                ;;
+
+            *)
+                echo "Please enter 1 or 2."
+                echo
+                ;;
+
+        esac
+
+    done
+}
+
+prepare_installation()
+{
+    if [ "$INSTALL_MODE" = "new" ]; then
+
+        echo "Preparing new installation..."
+
+        systemctl stop netmonitor 2>/dev/null || true
+
+        rm -rf "$CONFIG_DIR"
+        rm -f "$DATA_DIR/netmonitor.db"
+
+        echo "Existing configuration and database removed."
+        echo
+
+    else
+
+        echo "Preparing update..."
+
+        echo "Existing configuration and database will be preserved."
+        echo
+
+    fi
+}

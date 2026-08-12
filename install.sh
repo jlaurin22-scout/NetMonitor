@@ -15,6 +15,9 @@ print_header
 echo "Repository : $PROJECT_DIR"
 echo
 
+select_installation_type
+prepare_installation
+
 install_packages
 create_directories
 install_launcher
