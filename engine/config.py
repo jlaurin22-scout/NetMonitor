@@ -24,7 +24,6 @@ def load_customer():
     if not os.path.exists(CUSTOMER_CONFIG):
 
         return {
-            "version": "0.5.0",
             "customer": "",
             "site": "",
             "networks": [],

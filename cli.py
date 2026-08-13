@@ -40,11 +40,6 @@ import ui
 
 # from inventory.network import detect
 
-VERSION = "0.4.0"
-
-VERSION_FILE = "/etc/netmonitor/version"
-BUILD_FILE = "/etc/netmonitor/build"
-
 def banner():
     ui.banner()
 
@@ -408,7 +403,6 @@ def init():
 
     config.save_customer(
         {
-            "version": VERSION,
             "customer": customer,
             "site": site,
             "networks": networks,
@@ -456,7 +450,6 @@ def reset():
 
     config.save_customer(
         {
-            "version": VERSION,
             "customer": "",
             "site": "",
             "networks": [],

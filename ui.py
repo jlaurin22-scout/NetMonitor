@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+from engine.constants import VERSION, BUILD, CODENAME
+
 RESET   = "\033[0m"
 
 BLACK   = "\033[30m"
@@ -13,9 +15,6 @@ CYAN    = "\033[36m"
 WHITE   = "\033[37m"
 
 BOLD    = "\033[1m"
-
-VERSION = "0.5.0-dev1"
-CODENAME = "Console"
 
 def clear():
     os.system("clear")
@@ -34,7 +33,10 @@ def banner():
  ╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝    ╚═╝
 {RESET}""")
 
-    print(f"{BOLD}{WHITE} Scout Network Monitor {GREEN}{VERSION}{RESET}")
+    print(
+        f"{BOLD}{WHITE} Scout Network Monitor "
+        f"{GREEN}{VERSION}-{BUILD}{RESET}"
+    )
     print(f"{CYAN} Codename: {YELLOW}{CODENAME}{RESET}")
     print(f"{BLUE}{'=' * 42}{RESET}")
     print()

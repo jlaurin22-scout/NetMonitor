@@ -9,7 +9,9 @@ from engine.constants import (
     JOB_GATEWAY,
     JOB_INTERNET,
     JOB_DNS,
-    JOB_DEVICE
+    JOB_DEVICE,
+    VERSION,
+    BUILD
 )
 
 
@@ -25,6 +27,7 @@ def dns_display_name(server):
         return "Quad9 DNS"
 
     return "DNS"
+
 
 def add_network_monitors(
     scheduler,
@@ -54,7 +57,7 @@ def add_network_monitors(
         "ip": network["gateway"],
         "interval": settings["monitor"]["gateway_interval"]
     })
-    
+
     print("Adding Internet monitor...")
 
     scheduler.add_job({
@@ -64,7 +67,7 @@ def add_network_monitors(
         "targets": settings["internet"]["targets"],
         "interval": settings["monitor"]["internet_interval"]
     })
-    
+
     print("Adding DNS monitor...")
 
     scheduler.add_job({
@@ -75,18 +78,21 @@ def add_network_monitors(
         "lookup": settings["dns"]["lookup"],
         "interval": settings["monitor"]["dns_interval"]
     })
-    
+
     return [
         gateway_name,
         internet_name,
         dns_name
     ]
-    
+
+
 def main():
 
     print()
     print("============================================================")
-    print("              NetMonitor Engine v0.4.0")
+    print(
+        f"              NetMonitor Engine v{VERSION}-{BUILD}"
+    )
     print("============================================================")
     print()
 
@@ -142,7 +148,7 @@ def main():
     print()
 
     devices = get_devices()
-    
+
     valid_jobs.extend(
         device["name"] for device in devices
     )
@@ -179,7 +185,7 @@ def main():
             "checks": device["checks"],
             "interval": settings["monitor"]["device_interval"]
         })
-        
+
     print()
     print("Engine started successfully.")
     print()

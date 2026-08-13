@@ -3,27 +3,12 @@
 import subprocess
 
 import ui
-from engine import config
+from engine import constants
 
 
 def version():
 
     ui.banner()
-
-    try:
-
-        customer = config.load_customer()
-
-        version = customer.get(
-            "version",
-            "Unknown"
-        )
-
-    except Exception:
-
-        version = "Unknown"
-
-    build = "0.5.0-dev1"
 
     service = subprocess.run(
         [
@@ -35,7 +20,7 @@ def version():
         text=True
     ).stdout.strip()
 
-    print(f"Version : {version}")
-    print(f"Build   : {build}")
+    print(f"Version : {constants.VERSION}")
+    print(f"Build   : {constants.BUILD}")
     print(f"Engine  : {service}")
     print()
