@@ -110,12 +110,12 @@ def help_menu():
                 print("2) View Incidents")
                 print("3) Clear Event History")
                 print()
-                print("0) Back")
+                print("B) Back")
                 print()
 
                 event_choice = input(
                     "Selection: "
-                ).strip()
+                ).strip().lower()
 
                 if event_choice == "1":
 
@@ -135,7 +135,7 @@ def help_menu():
                     clear_events()
                     input("\nPress Enter to continue...")
 
-                elif event_choice == "0":
+                elif event_choice == "b":
 
                     break      
                     
