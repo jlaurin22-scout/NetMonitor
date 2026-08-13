@@ -567,11 +567,9 @@ def device_menu():
             os.system("clear")
             device_scan()
 
-            input("\nPress Enter to continue...")
-
             os.system("clear")
             continue
-
+            
         elif choice == "3":
 
             os.system("clear")
