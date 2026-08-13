@@ -10,17 +10,11 @@ from commands.version import version
 from commands.service import service
 from commands.status import status
 from commands.device.add import device_add
-
 from commands.device.list import device_list
-
 from commands.device.network import network_list
-
 from commands.device.edit import device_edit
-
 from commands.device.remove import device_remove
-
 from commands.device.scan import device_scan
-
 from commands.events import (
     clear_events,
     events,
@@ -38,10 +32,11 @@ import config
 import database
 import ui
 
-# from inventory.network import detect
 
 def banner():
+
     ui.banner()
+
 
 def help_menu():
 
@@ -130,8 +125,8 @@ def help_menu():
 
                 elif event_choice == "b":
 
-                    break      
-                    
+                    break
+
         elif choice == "5":
 
             os.system("clear")
@@ -152,8 +147,8 @@ def help_menu():
         elif choice == "8":
 
             os.system("clear")
-            service()        
-        
+            service()
+
         elif choice == "v":
 
             os.system("clear")
@@ -172,7 +167,8 @@ def help_menu():
         if choice not in ("4", "7", "8", "q"):
 
             input("\nPress Enter to continue...")
-        
+
+
 def configuration_menu():
 
     os.system("clear")
@@ -221,7 +217,8 @@ def configuration_menu():
 
         input("\nPress Enter to continue...")
         os.system("clear")
- 
+
+
 def networks_menu():
 
     os.system("clear")
@@ -255,8 +252,9 @@ def networks_menu():
 
         elif choice == "3":
 
-            print()
-            print("Coming in Build 0.5.0-dev2")
+            os.system("clear")
+            edit_network_menu()
+            continue
 
         elif choice == "4":
 
@@ -276,6 +274,7 @@ def networks_menu():
         input("\nPress Enter to continue...")
         os.system("clear")
 
+
 def add_network_menu():
 
     banner()
@@ -289,7 +288,7 @@ def add_network_menu():
     ip = input("IP Address        : ").strip()
     prefix = int(input("Prefix            : ").strip())
     gateway = input("Gateway           : ").strip()
-    gateway_name = input("Gateway Name      : ").strip()
+    gateway_name = input("Router / Firewall  : ").strip()
     dns1 = input("Primary DNS       : ").strip()
     dns2 = input("Secondary DNS     : ").strip()
 
@@ -319,7 +318,223 @@ def add_network_menu():
         ui.error(str(e))
 
     print()
-        
+
+
+def edit_network_menu():
+
+    ui.banner()
+
+    networks = config.get_networks()
+
+    if not networks:
+
+        ui.warning("No networks configured.")
+        print()
+        return
+
+    print("Edit Network")
+    print("------------")
+    print()
+
+    print(
+        f"{'ID':<4}"
+        f"{'NAME':<20}"
+        f"{'INTERFACE':<12}"
+        f"{'GATEWAY':<16}"
+    )
+
+    print("-" * 65)
+
+    for network in networks:
+
+        print(
+            f"{network['id']:<4}"
+            f"{network['name']:<20}"
+            f"{network['interface']:<12}"
+            f"{network['gateway']:<16}"
+        )
+
+    print()
+    print("B) Back")
+    print()
+
+    selection = input(
+        "Enter network ID: "
+    ).strip().lower()
+
+    if selection == "b":
+
+        return
+
+    try:
+
+        network_id = int(selection)
+
+    except ValueError:
+
+        print()
+        ui.error("Invalid network ID.")
+        print()
+        return
+
+    selected = None
+
+    for network in networks:
+
+        if network["id"] == network_id:
+
+            selected = network
+            break
+
+    if selected is None:
+
+        print()
+        ui.error("Network not found.")
+        print()
+        return
+
+    print()
+    print("Edit Network")
+    print("------------")
+    print()
+
+    name = input(
+        f"Network Name      [{selected['name']}] : "
+    ).strip()
+
+    if name == "":
+
+        name = selected["name"]
+
+    interface = input(
+        f"Interface         [{selected['interface']}] : "
+    ).strip()
+
+    if interface == "":
+
+        interface = selected["interface"]
+
+    ip = input(
+        f"IP Address        [{selected['ip']}] : "
+    ).strip()
+
+    if ip == "":
+
+        ip = selected["ip"]
+
+    prefix_input = input(
+        f"Prefix            [{selected['prefix']}] : "
+    ).strip()
+
+    if prefix_input == "":
+
+        prefix = selected["prefix"]
+
+    else:
+
+        try:
+
+            prefix = int(prefix_input)
+
+        except ValueError:
+
+            print()
+            ui.error("Invalid prefix.")
+            print()
+            return
+
+    gateway = input(
+        f"Gateway           [{selected['gateway']}] : "
+    ).strip()
+
+    if gateway == "":
+
+        gateway = selected["gateway"]
+
+    gateway_name = input(
+        f"Router / Firewall  [{selected.get('gateway_name', 'Router / Firewall')}] : "
+    ).strip()
+
+    if gateway_name == "":
+
+        gateway_name = selected.get(
+            "gateway_name",
+            "Router / Firewall"
+        )
+
+    current_dns = selected.get(
+        "dns",
+        [
+            "",
+            ""
+        ]
+    )
+
+    dns1_default = current_dns[0] if len(current_dns) > 0 else ""
+    dns2_default = current_dns[1] if len(current_dns) > 1 else ""
+
+    dns1 = input(
+        f"Primary DNS       [{dns1_default}] : "
+    ).strip()
+
+    if dns1 == "":
+
+        dns1 = dns1_default
+
+    dns2 = input(
+        f"Secondary DNS     [{dns2_default}] : "
+    ).strip()
+
+    if dns2 == "":
+
+        dns2 = dns2_default
+
+    print()
+    print("Save changes? (Y/N)")
+    answer = input(
+        "Selection: "
+    ).strip().lower()
+
+    if not answer.startswith("y"):
+
+        print()
+        ui.warning("Cancelled.")
+        print()
+        return
+
+    try:
+
+        config.update_network(
+            network_id,
+            name,
+            interface,
+            ip,
+            prefix,
+            gateway,
+            gateway_name,
+            [
+                dns1,
+                dns2
+            ]
+        )
+
+        subprocess.run(
+            ["systemctl", "restart", "netmonitor"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        print()
+        ui.success("Network updated successfully.")
+        print()
+
+    except Exception as e:
+
+        print()
+        ui.error(str(e))
+        print()
+
+
 def device_menu():
 
     os.system("clear")
@@ -343,6 +558,7 @@ def device_menu():
         choice = input("Selection: ").strip().lower()
 
         if choice == "1":
+
             os.system("clear")
             device_list()
 
@@ -355,29 +571,31 @@ def device_menu():
 
             os.system("clear")
             continue
-            
+
         elif choice == "3":
 
             os.system("clear")
             device_add()
-            
+
         elif choice == "4":
 
             os.system("clear")
             device_edit()
-            
+
         elif choice == "5":
 
             os.system("clear")
             device_remove()
-            
+
         elif choice == "b":
+
             os.system("clear")
             return
 
         input("\nPress Enter to continue...")
         os.system("clear")
-   
+
+
 def init():
 
     banner()
@@ -417,7 +635,8 @@ def init():
     print()
     ui.success("Initialization complete.")
     print()
-    
+
+
 def reset():
 
     banner()
@@ -471,7 +690,8 @@ def reset():
     print("Select 'Initialize' from the Main Menu")
     print("to configure Scout for a new customer.")
     print()
-    
+
+
 def watch():
 
     print()
@@ -480,7 +700,7 @@ def watch():
     print("Press Ctrl+C at any time to return to the Main Menu.")
     print()
     input("Press Enter to begin...")
-    
+
     try:
 
         while True:
@@ -497,27 +717,33 @@ def watch():
         print("Returning to Main Menu...")
         time.sleep(1)
 
+
 def main():
 
     args = sys.argv[1:]
 
     if not args:
+
         help_menu()
         return
 
     if args[0] == "init":
+
         init()
         return
 
     if args[0] == "reset":
+
         reset()
         return
 
     if args[0] == "watch":
+
         watch()
         return
 
     if args[0] == "status":
+
         status()
         return
 
@@ -532,46 +758,57 @@ def main():
 
         events()
         return
-        
+
     if args[0] == "incidents":
+
         incidents()
         return
 
     if args[0] == "version":
+
         version()
         return
 
     if args[0] == "service":
+
         service()
         return
 
     if args[0] == "device":
 
         if len(args) < 2:
+
             print("Usage: nm device scan|add|list|remove")
             return
 
         if args[1] == "scan":
+
             device_scan()
             return
 
         if args[1] == "add":
+
             device_add()
             return
 
         if args[1] == "edit":
+
             device_edit()
             return
 
         if args[1] == "list":
+
             device_list()
             return
 
         if args[1] == "remove":
+
             device_remove()
             return
 
     print("Command not implemented yet.")
 
+
 if __name__ == "__main__":
+
     main()

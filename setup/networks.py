@@ -83,12 +83,12 @@ def run():
             network_name = info["interface"]
 
         gateway_name = input(
-            "Gateway Name : "
+            "Router / Firewall : "
         ).strip()
 
         if gateway_name == "":
 
-            gateway_name = "Gateway"
+            gateway_name = "Router / Firewall"
 
         gateway = info["gateway"]
 
