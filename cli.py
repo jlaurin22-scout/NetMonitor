@@ -19,9 +19,7 @@ from commands.device.edit import device_edit
 
 from commands.device.remove import device_remove
 
-from commands.device_old import (
-    device_scan,
-)
+from commands.device.scan import device_scan
 
 from commands.events import (
     clear_events,
