@@ -15,8 +15,8 @@ def status():
 
     print("Customer")
     print("--------")
-    print(f"Customer : {customer.get('customer','Unknown')}")
-    print(f"Site     : {customer.get('site','Unknown')}")
+    print(f"Customer : {customer.get('customer', 'Unknown')}")
+    print(f"Address  : {customer.get('address', 'Unknown')}")
     print()
 
     service = subprocess.run(
@@ -72,5 +72,3 @@ def status():
             f"{ui.state(row['state']):<18}"
             f"{row['last_change']}"
         )
-
-    print()

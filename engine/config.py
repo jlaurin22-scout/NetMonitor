@@ -25,7 +25,7 @@ def load_customer():
 
         return {
             "customer": "",
-            "site": "",
+            "address": "",
             "networks": [],
             "tailscale": True
         }

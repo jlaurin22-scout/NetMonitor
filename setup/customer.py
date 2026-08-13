@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 def run():
 
     print("Customer Setup")
@@ -9,13 +10,13 @@ def run():
         "Customer Name : "
     ).strip()
 
-    site = input(
-        "Site Name     : "
+    address = input(
+        "Address       : "
     ).strip()
 
     print()
 
     return {
         "customer": customer,
-        "site": site
+        "address": address
     }

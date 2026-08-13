@@ -385,8 +385,8 @@ def init():
     customer_info = customer_setup()
 
     customer = customer_info["customer"]
-    site = customer_info["site"]
-    
+    address = customer_info["address"]
+
     networks = network_setup()
 
     if networks is None:
@@ -404,7 +404,7 @@ def init():
     config.save_customer(
         {
             "customer": customer,
-            "site": site,
+            "address": address,
             "networks": networks,
             "tailscale": True
         }
@@ -451,7 +451,7 @@ def reset():
     config.save_customer(
         {
             "customer": "",
-            "site": "",
+            "address": "",
             "networks": [],
             "tailscale": True
         }
