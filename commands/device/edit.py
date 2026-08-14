@@ -31,8 +31,27 @@ def device_edit():
         )
 
     print()
+    print("C) Cancel")
+    print()
 
-    device_id = int(input("Enter device ID : "))
+    device_selection = input(
+        "Enter device ID : "
+    ).strip().lower()
+
+    if device_selection == "c":
+
+        return
+
+    try:
+
+        device_id = int(device_selection)
+
+    except ValueError:
+
+        print()
+        ui.error("Invalid device ID.")
+        print()
+        return
 
     selected = None
 

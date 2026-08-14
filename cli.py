@@ -579,6 +579,7 @@ def device_menu():
 
             os.system("clear")
             device_edit()
+            continue
 
         elif choice == "5":
 
