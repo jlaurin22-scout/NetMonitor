@@ -60,6 +60,15 @@ def save_customer(data):
         json.dump(data, f, indent=4)
 
 
+def update_customer(customer, address):
+
+    data = load_customer()
+
+    data["customer"] = customer
+    data["address"] = address
+
+    save_customer(data)
+
 #
 # Device Configuration
 #

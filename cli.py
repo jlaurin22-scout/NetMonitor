@@ -172,6 +172,114 @@ def help_menu():
             input("\nPress Enter to continue...")
 
 
+def customer_menu():
+
+    banner()
+
+    customer = config.load_customer()
+
+    current_name = customer.get(
+        "customer",
+        ""
+    )
+
+    current_address = customer.get(
+        "address",
+        ""
+    )
+
+    print("Customer")
+    print("--------")
+    print()
+
+    print("Current Configuration")
+    print("---------------------")
+    print(f"Customer : {current_name}")
+    print(f"Address  : {current_address}")
+    print()
+
+    name = input(
+        f"Customer Name [{current_name}] : "
+    ).strip()
+
+    if name == "":
+
+        name = current_name
+
+    address = current_address
+
+    try:
+
+        config.update_customer(
+            name,
+            address
+        )
+
+    except Exception as e:
+
+        print()
+        ui.error(str(e))
+        print()
+        return
+
+    print()
+    ui.success("Customer updated successfully.")
+    print()
+    input("Press ENTER to continue...")
+
+def address_menu():
+
+    banner()
+
+    customer = config.load_customer()
+
+    current_name = customer.get(
+        "customer",
+        ""
+    )
+
+    current_address = customer.get(
+        "address",
+        ""
+    )
+
+    print("Address")
+    print("-------")
+    print()
+
+    print("Current Configuration")
+    print("---------------------")
+    print(f"Customer : {current_name}")
+    print(f"Address  : {current_address}")
+    print()
+
+    address = input(
+        f"Address [{current_address}] : "
+    ).strip()
+
+    if address == "":
+
+        address = current_address
+
+    try:
+
+        config.update_customer(
+            current_name,
+            address
+        )
+
+    except Exception as e:
+
+        print()
+        ui.error(str(e))
+        print()
+        return
+
+    print()
+    ui.success("Address updated successfully.")
+    print()
+    input("Press ENTER to continue...")
+
 def configuration_menu():
 
     os.system("clear")
@@ -180,11 +288,30 @@ def configuration_menu():
 
         banner()
 
+        customer = config.load_customer()
+
+        current_name = customer.get(
+            "customer",
+            ""
+        )
+
+        current_address = customer.get(
+            "address",
+            ""
+        )
+
         print("Configuration")
         print("-------------")
         print()
+
+        print("Current Configuration")
+        print("---------------------")
+        print(f"Customer : {current_name}")
+        print(f"Address  : {current_address}")
+        print()
+
         print("1) Customer")
-        print("2) Site")
+        print("2) Address")
         print("3) Networks")
         print()
         print("B) Back")
@@ -194,13 +321,15 @@ def configuration_menu():
 
         if choice == "1":
 
-            print()
-            print("Coming soon.")
+            os.system("clear")
+            customer_menu()
+            continue
 
         elif choice == "2":
 
-            print()
-            print("Coming soon.")
+            os.system("clear")
+            address_menu()
+            continue
 
         elif choice == "3":
 
@@ -217,10 +346,6 @@ def configuration_menu():
 
             print()
             print("Invalid selection.")
-
-        input("\nPress Enter to continue...")
-        os.system("clear")
-
 
 def networks_menu():
 
