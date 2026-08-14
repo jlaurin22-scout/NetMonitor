@@ -11,7 +11,10 @@ from commands.service import service
 from commands.status import status
 from commands.device.add import device_add
 from commands.device.list import device_list
-from commands.device.network import network_list
+from commands.device.network import (
+    network_list,
+    network_remove
+)
 from commands.device.edit import device_edit
 from commands.device.remove import device_remove
 from commands.device.scan import device_scan
@@ -258,8 +261,9 @@ def networks_menu():
 
         elif choice == "4":
 
-            print()
-            print("Coming in Build 0.5.0-dev2")
+            os.system("clear")
+            network_remove()
+            continue
 
         elif choice == "b":
 
