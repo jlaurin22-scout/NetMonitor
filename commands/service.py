@@ -7,7 +7,7 @@ import ui
 
 def service():
 
-    ui.banner()
+    ui.banner("NetMonitor Service")
 
     active = subprocess.run(
         ["systemctl", "is-active", "netmonitor"],
@@ -46,9 +46,6 @@ def service():
         capture_output=True,
         text=True
     ).stdout.strip()
-
-    print("NetMonitor Service")
-    print("------------------")
 
     status = "UP" if active == "active" else "DOWN"
     print(f"Status  : {ui.state(status)}")

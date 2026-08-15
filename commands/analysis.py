@@ -3,15 +3,12 @@
 import ui
 from engine import analyzer
 
+
 def scout_analysis():
 
-    banner()
+    ui.banner("Scout Analysis")
 
     report = analyzer.analyze()
-
-    print("Scout Analysis")
-    print("==============")
-    print()
 
     print("Executive Summary")
     print("-----------------")
@@ -171,5 +168,3 @@ def scout_analysis():
         print("No reliability data available.")
 
     print()
-    
-

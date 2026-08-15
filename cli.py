@@ -145,6 +145,7 @@ def help_menu():
 
             os.system("clear")
             service()
+            input("\nPress Enter to continue...")
 
         elif choice == "v":
 

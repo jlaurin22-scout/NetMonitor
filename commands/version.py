@@ -8,7 +8,7 @@ from engine import constants
 
 def version():
 
-    ui.banner()
+    ui.banner("Version")
 
     service = subprocess.run(
         [

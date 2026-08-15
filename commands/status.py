@@ -9,7 +9,7 @@ from engine import database
 
 def status():
 
-    ui.banner()
+    ui.banner("Status")
 
     customer = config.load_customer()
 
