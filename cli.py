@@ -394,13 +394,17 @@ def networks_menu():
 
 def add_network_menu():
 
-    banner()
+    banner("Add Network")
 
-    print("Add Network")
-    print("-----------")
+    print()
+    print("B) Back")
     print()
 
     name = input("Network Name      : ").strip()
+
+    if name.lower() == "b":
+
+        return
     interface = input("Interface         : ").strip()
     ip = input("IP Address        : ").strip()
     prefix = int(input("Prefix            : ").strip())
@@ -439,7 +443,7 @@ def add_network_menu():
 
 def edit_network_menu():
 
-    ui.banner()
+    ui.banner("Edit Network")
 
     networks = config.get_networks()
 
@@ -448,10 +452,6 @@ def edit_network_menu():
         ui.warning("No networks configured.")
         print()
         return
-
-    print("Edit Network")
-    print("------------")
-    print()
 
     print(
         f"{'ID':<4}"
@@ -511,10 +511,6 @@ def edit_network_menu():
         return
 
     print()
-    print("Edit Network")
-    print("------------")
-    print()
-
     name = input(
         f"Network Name      [{selected['name']}] : "
     ).strip()

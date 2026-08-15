@@ -9,7 +9,7 @@ from engine import config
 
 def network_list():
 
-    ui.banner()
+    ui.banner("Network List")
 
     networks = config.get_networks()
 
@@ -42,7 +42,7 @@ def network_list():
 
 def network_remove():
 
-    ui.banner()
+    ui.banner("Remove Network")
 
     networks = config.get_networks()
 
@@ -51,10 +51,6 @@ def network_remove():
         ui.warning("No networks configured.")
         print()
         return
-
-    print("Remove Network")
-    print("--------------")
-    print()
 
     print(
         f"{'ID':<4}"
