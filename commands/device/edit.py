@@ -9,7 +9,7 @@ from engine import config
 
 def device_edit():
 
-    ui.banner()
+    ui.banner("Edit Device")
 
     devices = config.get_devices()
 
@@ -17,6 +17,7 @@ def device_edit():
 
         ui.warning("No monitored devices configured.")
         print()
+        input("Press ENTER to continue...")
         return
 
     print(f"{'ID':<4} {'NAME':<25} {'IP ADDRESS'}")

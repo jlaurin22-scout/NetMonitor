@@ -10,7 +10,8 @@ def device_scan():
 
     from engine.inventory import scanner
 
-    print()
+    ui.banner("Device Scan")
+
     ui.info("Scanning network...")
     print()
 

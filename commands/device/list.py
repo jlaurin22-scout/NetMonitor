@@ -7,7 +7,7 @@ from engine import config
 
 def device_list():
 
-    ui.banner()
+    ui.banner("Device List")
 
     devices = config.get_devices()
 

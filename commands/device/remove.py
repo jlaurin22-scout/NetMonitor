@@ -12,7 +12,7 @@ def device_remove():
 
     while True:
 
-        ui.banner()
+        ui.banner("Remove Device")
 
         devices = config.get_devices()
 

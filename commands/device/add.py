@@ -9,10 +9,7 @@ from .common import add_monitored_device
 
 def device_add():
 
-    ui.banner()
-
-    print("Add Monitored Device")
-    print("--------------------")
+    ui.banner("Add Monitored Device")
 
     name = input("Device Name : ").strip()
     ip = input("IP Address  : ").strip()
