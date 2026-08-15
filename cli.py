@@ -36,9 +36,9 @@ import database
 import ui
 
 
-def banner():
+def banner(title=None):
 
-    ui.banner()
+    ui.banner(title)
 
 
 def help_menu():
@@ -49,11 +49,8 @@ def help_menu():
 
         os.system("clear")
 
-        banner()
+        banner("Main Menu")
 
-        print("Main Menu")
-        print("---------")
-        print()
         print("1) Initialize")
         print("2) Status")
         print("3) Live Watch")
@@ -92,11 +89,8 @@ def help_menu():
 
                 os.system("clear")
 
-                banner()
+                banner("Events")
 
-                print("Events")
-                print("------")
-                print()
                 print("1) View Recent Events")
                 print("2) View Incidents")
                 print("3) Clear Event History")
@@ -286,7 +280,7 @@ def configuration_menu():
 
     while True:
 
-        banner()
+        banner("Configuration")
 
         customer = config.load_customer()
 
@@ -299,10 +293,6 @@ def configuration_menu():
             "address",
             ""
         )
-
-        print("Configuration")
-        print("-------------")
-        print()
 
         print("Current Configuration")
         print("---------------------")
@@ -353,11 +343,8 @@ def networks_menu():
 
     while True:
 
-        banner()
+        banner("Networks")
 
-        print("Networks")
-        print("--------")
-        print()
         print("1) List Networks")
         print("2) Add Network")
         print("3) Edit Network")
@@ -670,11 +657,8 @@ def device_menu():
 
     while True:
 
-        banner()
+        banner("Devices")
 
-        print("Devices")
-        print("-------")
-        print()
         print("1) List Devices")
         print("2) Scan Network & Add")
         print("3) Add Device Manually")

@@ -16,11 +16,13 @@ WHITE   = "\033[37m"
 
 BOLD    = "\033[1m"
 
+
 def clear():
+
     os.system("clear")
 
 
-def banner():
+def banner(title=None):
 
     clear()
 
@@ -37,38 +39,66 @@ def banner():
         f"{BOLD}{WHITE} Scout Network Monitor "
         f"{GREEN}{VERSION}-{BUILD}{RESET}"
     )
-    print(f"{CYAN} Codename: {YELLOW}{CODENAME}{RESET}")
-    print(f"{BLUE}{'=' * 42}{RESET}")
+
+    print(
+        f"{CYAN} Codename: {YELLOW}{CODENAME}{RESET}"
+    )
+
+    if title:
+
+        print()
+        print(
+            f"{BOLD}{WHITE}{title.upper()}{RESET}"
+        )
+
+    print(
+        f"{BLUE}{'=' * 42}{RESET}"
+    )
+
     print()
+
 
 def title(text):
 
-    clear()
+    banner(text)
 
-    banner()
-
-    print(text)
-    print("-" * len(text))
-    print()
 
 def success(text):
-    print(f"{GREEN}✓ {text}{RESET}")
+
+    print(
+        f"{GREEN}✓ {text}{RESET}"
+    )
+
 
 def error(text):
-    print(f"{RED}✗ {text}{RESET}")
+
+    print(
+        f"{RED}✗ {text}{RESET}"
+    )
+
 
 def info(text):
-    print(f"{CYAN}ℹ {text}{RESET}")
+
+    print(
+        f"{CYAN}ℹ {text}{RESET}"
+    )
+
 
 def warning(text):
-    print(f"{YELLOW}! {text}{RESET}")
+
+    print(
+        f"{YELLOW}! {text}{RESET}"
+    )
+
 
 def state(state):
 
     if state == "UP":
+
         return f"{GREEN}● UP{RESET}"
 
     if state == "DOWN":
+
         return f"{RED}● DOWN{RESET}"
 
     return state
