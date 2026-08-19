@@ -9,20 +9,31 @@ def device_list():
 
     ui.banner("Device List")
 
+    customer = config.load_customer()
+
+    networks = customer.get(
+        "networks",
+        []
+    )
+
     devices = config.get_devices()
 
-    if not devices:
+    if not networks and not devices:
 
-        ui.warning("No monitored devices configured.")
+        ui.warning("No devices or networks configured.")
         print()
         return
 
-    print(f"{'ID':<4} {'NAME':<25} {'TYPE':<11} {'IP ADDRESS'}")
+    print(
+        f"{'ID':<4} "
+        f"{'NAME':<25} "
+        f"{'TYPE':<11} "
+        f"{'IP ADDRESS'}"
+    )
+
     print("-" * 60)
 
-    customer = config.load_customer()
-
-    for network in customer["networks"]:
+    for network in networks:
 
         print(
             f"G{network['id']:<3}"
