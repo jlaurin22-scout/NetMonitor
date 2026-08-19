@@ -89,26 +89,54 @@ def update_status(job_name, job_type, state):
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT OR REPLACE INTO current_status
-        (
-            job_name,
-            job_type,
-            state,
-            last_change
-        )
-        VALUES
-        (
-            ?,
-            ?,
-            ?,
-            datetime('now','localtime')
-        )
+        SELECT job_name
+        FROM current_status
+        WHERE job_name = ?
     """,
     (
         job_name,
-        job_type,
-        state
     ))
+
+    existing = cur.fetchone()
+
+    if existing:
+
+        cur.execute("""
+            UPDATE current_status
+            SET
+                job_type = ?,
+                state = ?
+            WHERE job_name = ?
+        """,
+        (
+            job_type,
+            state,
+            job_name
+        ))
+
+    else:
+
+        cur.execute("""
+            INSERT INTO current_status
+            (
+                job_name,
+                job_type,
+                state,
+                last_change
+            )
+            VALUES
+            (
+                ?,
+                ?,
+                ?,
+                datetime('now','localtime')
+            )
+        """,
+        (
+            job_name,
+            job_type,
+            state
+        ))
 
     conn.commit()
     conn.close()
