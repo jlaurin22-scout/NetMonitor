@@ -683,7 +683,11 @@ def device_menu():
         elif choice == "3":
 
             os.system("clear")
-            device_add()
+
+            if not device_add():
+
+                os.system("clear")
+                continue
 
         elif choice == "4":
 
