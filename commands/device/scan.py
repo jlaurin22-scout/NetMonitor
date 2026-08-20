@@ -127,7 +127,8 @@ def device_scan():
                 name=name,
                 ip=device.ip,
                 ping=True,
-                snmp=device.snmp
+                snmp=device.snmp,
+                network_id=device.network_id
             )
 
             ui.success(f"✓ Added {name}")

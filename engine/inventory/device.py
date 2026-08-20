@@ -19,6 +19,7 @@ class Device:
         self.hostname = ""
         self.vendor = "Unknown"
         self.dns_servers = []
+        self.network_id = None
 
         #
         # Ping
