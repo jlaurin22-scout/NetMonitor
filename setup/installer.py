@@ -3,6 +3,7 @@
 import subprocess
 from pathlib import Path
 
+from engine import config
 from engine import database
 
 
@@ -35,6 +36,17 @@ def run():
         parents=True,
         exist_ok=True
     )
+
+    Path(
+        "/etc/netmonitor"
+    ).mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    config.load_customer()
+    config.load_devices()
+    config.load_settings()
 
     database.initialize()
 
