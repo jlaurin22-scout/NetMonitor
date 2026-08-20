@@ -166,6 +166,4 @@ def device_add():
 
     print()
 
-    input("Press ENTER to continue...")
-
     return True

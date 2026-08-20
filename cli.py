@@ -689,6 +689,10 @@ def device_menu():
                 os.system("clear")
                 continue
 
+            input("Press Enter to continue...")
+
+            continue
+
         elif choice == "4":
 
             os.system("clear")
