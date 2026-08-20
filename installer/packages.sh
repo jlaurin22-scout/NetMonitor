@@ -13,6 +13,7 @@ install_packages()
         python3-rich \
         python3-requests \
         python3-psutil \
+        python3-dnspython \
         iputils-ping \
         dnsutils \
         net-tools \
