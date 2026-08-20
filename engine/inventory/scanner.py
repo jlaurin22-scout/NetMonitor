@@ -15,18 +15,26 @@ def scan():
 
     for network in networks:
 
-        alive.extend(
-            scan_network(
-                network["network"]
-            )
+        hosts = scan_network(
+            network["network"]
         )
-        
+
+        for host in hosts:
+
+            host["dns_servers"] = network["dns"]
+
+        alive.extend(hosts)
+
     devices = []
 
     for host in alive:
 
         device = Device(ip=host["ip"])
         device.response = host["response"]
+        device.dns_servers = host.get(
+            "dns_servers",
+            []
+        )
 
         devices.append(device)
 

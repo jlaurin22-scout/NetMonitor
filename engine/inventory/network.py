@@ -4,6 +4,60 @@ import ipaddress
 import subprocess
 
 
+def get_dhcp_dns(interface_name):
+
+    lease_file = (
+        f"/var/lib/dhcp/dhclient.{interface_name}.leases"
+    )
+
+    try:
+
+        with open(lease_file, "r") as f:
+
+            content = f.read()
+
+    except OSError:
+
+        return []
+
+    leases = content.split("lease {")
+
+    for lease in reversed(leases):
+
+        if f'interface "{interface_name}"' not in lease:
+
+            continue
+
+        dns_servers = []
+
+        for line in lease.splitlines():
+
+            line = line.strip()
+
+            if not line.startswith(
+                "option domain-name-servers"
+            ):
+
+                continue
+
+            value = line.split(
+                " ",
+                2
+            )[-1].rstrip(";")
+
+            for server in value.split():
+
+                if server not in dns_servers:
+
+                    dns_servers.append(server)
+
+        if dns_servers:
+
+            return dns_servers
+
+    return []
+
+
 def detect():
 
     networks = []
@@ -53,7 +107,7 @@ def detect():
         ):
 
             continue
-            
+
         cidr = fields[3]
 
         interface = ipaddress.ip_interface(cidr)
@@ -79,10 +133,17 @@ def detect():
         # leave it empty. The initialization wizard will ask
         # the user for the correct gateway.
         #
-        if gateway == "":
+        dns = get_dhcp_dns(
+            interface_name
+        )
 
-            gateway = ""
-            
+        if not dns:
+
+            dns = [
+                gateway,
+                "1.1.1.1"
+            ]
+
         networks.append(
             {
                 "interface": interface_name,
@@ -90,14 +151,12 @@ def detect():
                 "gateway": gateway,
                 "network": str(interface.network),
                 "prefix": interface.network.prefixlen,
-                "dns": [
-                    gateway,
-                    "1.1.1.1"
-                ]
+                "dns": dns
             }
         )
 
     return networks
+
 
 if __name__ == "__main__":
 
@@ -113,7 +172,9 @@ if __name__ == "__main__":
         print(f"Gateway   : {info['gateway']}")
         print(f"Network   : {info['network']}")
         print(f"Prefix    : /{info['prefix']}")
-        print(f"DNS 1     : {info['dns'][0]}")
-        print(f"DNS 2     : {info['dns'][1]}")
+        print(
+            f"DNS       : "
+            f"{', '.join(info['dns'])}"
+        )
 
     print()

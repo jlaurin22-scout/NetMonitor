@@ -3,8 +3,52 @@
 import socket
 import subprocess
 
+import dns.resolver
+import dns.reversename
 
-def reverse_dns(ip):
+
+def reverse_dns(ip, servers=None):
+
+    if servers:
+
+        reverse_name = dns.reversename.from_address(ip)
+
+        for server in servers:
+
+            if not server:
+                continue
+
+            resolver = dns.resolver.Resolver(
+                configure=False
+            )
+
+            resolver.nameservers = [
+                server
+            ]
+
+            resolver.timeout = 2
+            resolver.lifetime = 2
+
+            try:
+
+                answers = resolver.resolve(
+                    reverse_name,
+                    "PTR"
+                )
+
+                for answer in answers:
+
+                    hostname = str(answer).rstrip(".")
+
+                    if hostname:
+
+                        return hostname.split(".")[0]
+
+            except Exception:
+
+                continue
+
+        return ""
 
     try:
 
@@ -66,6 +110,7 @@ def mdns(ip):
                 and
                 hostname.count("-") == 4
             ):
+
                 return ""
 
             return hostname
@@ -76,15 +121,20 @@ def mdns(ip):
 
     return ""
 
-def lookup(ip):
+
+def lookup(ip, servers=None):
 
     #
-    # Reverse DNS
+    # Explicit DNS
     #
 
-    hostname = reverse_dns(ip)
+    hostname = reverse_dns(
+        ip,
+        servers
+    )
 
     if hostname:
+
         return hostname
 
     #
@@ -94,6 +144,7 @@ def lookup(ip):
     hostname = netbios(ip)
 
     if hostname:
+
         return hostname
 
     #
@@ -103,6 +154,7 @@ def lookup(ip):
     hostname = mdns(ip)
 
     if hostname:
+
         return hostname
 
     return ""
@@ -113,7 +165,10 @@ def enrich(device):
     if device.hostname:
         return
 
-    device.hostname = lookup(device.ip)
+    device.hostname = lookup(
+        device.ip,
+        device.dns_servers
+    )
 
 
 if __name__ == "__main__":

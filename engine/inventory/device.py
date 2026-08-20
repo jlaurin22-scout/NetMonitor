@@ -18,6 +18,7 @@ class Device:
         self.mac = ""
         self.hostname = ""
         self.vendor = "Unknown"
+        self.dns_servers = []
 
         #
         # Ping
