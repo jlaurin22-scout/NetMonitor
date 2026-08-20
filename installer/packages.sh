@@ -14,6 +14,7 @@ install_packages()
         python3-requests \
         python3-psutil \
         python3-dnspython \
+        python3-pysnmp4 \
         iputils-ping \
         dnsutils \
         net-tools \
