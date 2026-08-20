@@ -277,6 +277,13 @@ def load_settings():
             "dns": {
                 "server": "1.1.1.1",
                 "lookup": "google.com"
+            },
+            "ntfy": {
+                "enabled": False,
+                "server": "https://ntfy.sh",
+                "topic": "",
+                "token": "",
+                "name": ""
             }
         }
         with open(SETTINGS_CONFIG, "w") as f:
@@ -287,7 +294,19 @@ def load_settings():
 
     with open(SETTINGS_CONFIG, "r") as f:
 
-        return json.load(f)
+        data = json.load(f)
+
+    if "ntfy" not in data:
+
+        data["ntfy"] = {
+            "enabled": False,
+            "server": "https://ntfy.sh",
+            "topic": "",
+            "token": "",
+            "name": ""
+        }
+
+    return data
 
 #
 # Combined configuration

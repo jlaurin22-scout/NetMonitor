@@ -275,6 +275,216 @@ def address_menu():
     print()
     input("Press ENTER to continue...")
 
+def notifications_menu():
+
+    os.system("clear")
+
+    while True:
+
+        banner("Notifications")
+
+        settings = config.load_settings()
+        ntfy = settings.get(
+            "ntfy",
+            {}
+        )
+
+        enabled = ntfy.get(
+            "enabled",
+            False
+        )
+
+        server = ntfy.get(
+            "server",
+            "https://ntfy.sh"
+        )
+
+        topic = ntfy.get(
+            "topic",
+            ""
+        )
+
+        token = ntfy.get(
+            "token",
+            ""
+        )
+
+        name = ntfy.get(
+            "name",
+            ""
+        )
+
+        print("Current Configuration")
+        print("---------------------")
+        print(
+            f"Enabled : {'Yes' if enabled else 'No'}"
+        )
+        print(f"Server  : {server}")
+        print(
+            f"Topic   : {topic if topic else 'Not configured'}"
+        )
+        print(
+            f"Token   : {'Configured' if token else 'Not configured'}"
+        )
+        print(
+            f"Name    : {name if name else 'Not configured'}"
+        )
+        print()
+
+        print("1) Enable / Disable")
+        print("2) Server")
+        print("3) Topic")
+        print("4) Token")
+        print("5) Scout Name")
+        print()
+        print("B) Back")
+        print()
+
+        choice = input(
+            "Selection: "
+        ).strip().lower()
+
+        if choice == "1":
+
+            ntfy["enabled"] = not enabled
+
+            settings["ntfy"] = ntfy
+
+            config.save_settings(
+                settings
+            )
+
+            print()
+            ui.success(
+                f"NTFY notifications "
+                f"{'enabled' if ntfy['enabled'] else 'disabled'}."
+            )
+            print()
+            input("Press ENTER to continue...")
+            os.system("clear")
+
+        elif choice == "2":
+
+            print()
+
+            value = input(
+                f"NTFY Server [{server}] : "
+            ).strip()
+
+            if value:
+
+                ntfy["server"] = value
+
+                settings["ntfy"] = ntfy
+
+                config.save_settings(
+                    settings
+                )
+
+                print()
+                ui.success(
+                    "NTFY server updated successfully."
+                )
+                print()
+                input("Press ENTER to continue...")
+
+            os.system("clear")
+
+        elif choice == "3":
+
+            print()
+
+            value = input(
+                f"NTFY Topic [{topic}] : "
+            ).strip()
+
+            if value:
+
+                ntfy["topic"] = value
+
+                settings["ntfy"] = ntfy
+
+                config.save_settings(
+                    settings
+                )
+
+                print()
+                ui.success(
+                    "NTFY topic updated successfully."
+                )
+                print()
+                input("Press ENTER to continue...")
+
+            os.system("clear")
+
+        elif choice == "4":
+
+            print()
+
+            value = input(
+                "NTFY Token : "
+            ).strip()
+
+            if value:
+
+                ntfy["token"] = value
+
+                settings["ntfy"] = ntfy
+
+                config.save_settings(
+                    settings
+                )
+
+                print()
+                ui.success(
+                    "NTFY token updated successfully."
+                )
+                print()
+                input("Press ENTER to continue...")
+
+            os.system("clear")
+
+        elif choice == "5":
+
+            print()
+
+            value = input(
+                f"Scout Name [{name}] : "
+            ).strip()
+
+            if value:
+
+                ntfy["name"] = value
+
+                settings["ntfy"] = ntfy
+
+                config.save_settings(
+                    settings
+                )
+
+                print()
+                ui.success(
+                    "Scout name updated successfully."
+                )
+                print()
+                input("Press ENTER to continue...")
+
+            os.system("clear")
+
+        elif choice == "b":
+
+            os.system("clear")
+            return
+
+        else:
+
+            print()
+            ui.error("Invalid selection.")
+            print()
+            input("Press ENTER to continue...")
+            os.system("clear")
+
+
 def configuration_menu():
 
     os.system("clear")
@@ -295,20 +505,45 @@ def configuration_menu():
             ""
         )
 
+        settings = config.load_settings()
+
+        ntfy = settings.get(
+            "ntfy",
+            {}
+        )
+
+        ntfy_enabled = ntfy.get(
+            "enabled",
+            False
+        )
+
+        ntfy_name = ntfy.get(
+            "name",
+            ""
+        )
+
         print("Current Configuration")
         print("---------------------")
         print(f"Customer : {current_name}")
         print(f"Address  : {current_address}")
+        print(
+            f"NTFY     : "
+            f"{'Enabled' if ntfy_enabled else 'Disabled'}"
+            f"{f' ({ntfy_name})' if ntfy_name else ''}"
+        )
         print()
 
         print("1) Customer")
         print("2) Address")
         print("3) Networks")
+        print("4) Notifications")
         print()
         print("B) Back")
         print()
 
-        choice = input("Selection: ").strip().lower()
+        choice = input(
+            "Selection: "
+        ).strip().lower()
 
         if choice == "1":
 
@@ -328,6 +563,12 @@ def configuration_menu():
             networks_menu()
             continue
 
+        elif choice == "4":
+
+            os.system("clear")
+            notifications_menu()
+            continue
+
         elif choice == "b":
 
             os.system("clear")
@@ -336,7 +577,7 @@ def configuration_menu():
         else:
 
             print()
-            print("Invalid selection.")
+            ui.error("Invalid selection.")
 
 def networks_menu():
 
