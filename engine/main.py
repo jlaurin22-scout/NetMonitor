@@ -13,7 +13,10 @@ from engine.constants import (
     VERSION,
     BUILD
 )
-
+from engine.network import (
+    setup_network_routes,
+    cleanup_network_routes
+)
 
 def dns_display_name(server):
 
@@ -44,8 +47,8 @@ def add_network_monitors(
         f"{network['name']} Internet"
     )
 
-    dns_name = dns_display_name(
-        settings["dns"]["server"]
+    dns_name = (
+        f"{network['name']} DNS"
     )
 
     print("Adding Gateway monitor...")
@@ -54,6 +57,7 @@ def add_network_monitors(
         "type": JOB_GATEWAY,
         "name": gateway_name,
         "network_id": network["id"],
+        "network": network,
         "ip": network["gateway"],
         "interval": settings["monitor"]["gateway_interval"]
     })
@@ -64,6 +68,7 @@ def add_network_monitors(
         "type": JOB_INTERNET,
         "name": internet_name,
         "network_id": network["id"],
+        "network": network,
         "targets": settings["internet"]["targets"],
         "interval": settings["monitor"]["internet_interval"]
     })
@@ -74,7 +79,8 @@ def add_network_monitors(
         "type": JOB_DNS,
         "name": dns_name,
         "network_id": network["id"],
-        "server": settings["dns"]["server"],
+        "network": network,
+        "server": network["dns"][0],
         "lookup": settings["dns"]["lookup"],
         "interval": settings["monitor"]["dns_interval"]
     })
@@ -84,7 +90,6 @@ def add_network_monitors(
         internet_name,
         dns_name
     ]
-
 
 def main():
 
@@ -123,6 +128,8 @@ def main():
     settings = config["settings"]
 
     networks = customer["networks"]
+
+    setup_network_routes(networks)
 
     scheduler = Scheduler()
 
@@ -177,10 +184,29 @@ def main():
             f"{device['name']}"
         )
 
+        network = None
+
+        for configured_network in networks:
+
+            if configured_network["id"] == network_id:
+
+                network = configured_network
+                break
+
+        if network is None:
+
+            print(
+                f"  - Skipping {device['name']}: "
+                f"Network {network_id} not found."
+            )
+
+            continue
+
         scheduler.add_job({
             "type": JOB_DEVICE,
             "name": job_name,
             "network_id": network_id,
+            "network": network,
             "ip": device["ip"],
             "checks": device["checks"],
             "interval": settings["monitor"]["device_interval"]
@@ -191,14 +217,18 @@ def main():
     print()
 
     try:
+
         scheduler.run()
 
     except KeyboardInterrupt:
+
         print()
         print("Stopping NetMonitor...")
         print("Goodbye.")
-        print()
 
+    finally:
+
+        cleanup_network_routes(networks)
 
 if __name__ == "__main__":
     main()

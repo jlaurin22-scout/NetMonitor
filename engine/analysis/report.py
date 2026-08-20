@@ -25,6 +25,8 @@ def create_report(incidents, devices_monitored):
 
         "major_events": [],
 
+        "infrastructure_events": [],
+
         "findings": [],
 
         "top_findings": [],

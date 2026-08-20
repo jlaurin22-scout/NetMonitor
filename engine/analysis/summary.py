@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 def build_summary(report):
 
     report["executive_summary"] = {
@@ -9,11 +10,34 @@ def build_summary(report):
     }
 
     if not report["findings"]:
+
+        report["executive_summary"]["headline"] = (
+            "No significant network problems detected."
+        )
+
+        report["executive_summary"]["assessment"] = [
+            "All monitored network paths are currently operational."
+        ]
+
         return
 
-    first = report["findings"][0]
+    infrastructure_findings = [
+        finding
+        for finding in report["findings"]
+        if finding["type"] == "INFRASTRUCTURE"
+    ]
 
-    if first["type"] == "INFRASTRUCTURE":
+    device_findings = [
+        finding
+        for finding in report["findings"]
+        if finding["type"] == "DEVICE"
+    ]
+
+    #
+    # Multiple networks affected.
+    #
+
+    if report["major_outages"]:
 
         report["executive_summary"]["headline"] = (
             "Site-wide infrastructure outage detected."
@@ -22,40 +46,111 @@ def build_summary(report):
         report["executive_summary"]["assessment"] = [
 
             (
-                f"{first['count']} monitored devices became "
-                "unreachable."
+                f"{report['major_outages']} major "
+                "infrastructure outage(s) detected."
             ),
 
             (
-                "The outage is consistent with a gateway, "
-                "core switch or power failure."
+                "Multiple monitored network paths "
+                "were affected."
             )
 
         ]
 
-    elif first["type"] == "DEVICE":
+    #
+    # Network-specific infrastructure problems.
+    #
+
+    elif infrastructure_findings:
 
         report["executive_summary"]["headline"] = (
-            f"{first['device']} requires immediate attention."
+            "Network infrastructure instability detected."
+        )
+
+        assessment = []
+
+        for finding in infrastructure_findings:
+
+            networks = finding.get(
+                "networks",
+                []
+            )
+
+            count = finding.get(
+                "count",
+                0
+            )
+
+            if len(networks) == 1:
+
+                network = networks[0]
+
+                assessment.append(
+                    (
+                        f"{network}: {count} "
+                        "infrastructure incident(s) detected."
+                    )
+                )
+
+            else:
+
+                assessment.append(
+                    (
+                        f"{count} infrastructure "
+                        "incident(s) detected."
+                    )
+                )
+
+        report["executive_summary"]["assessment"] = assessment
+
+    #
+    # Device-only problems.
+    #
+
+    elif device_findings:
+
+        first = device_findings[0]
+
+        report["executive_summary"]["headline"] = (
+            f"{first['device']} requires attention."
         )
 
         report["executive_summary"]["assessment"] = [
 
             (
-                f"{first['count']} outage/recovery cycles "
-                "were recorded."
+                f"{first['count']} outage/recovery "
+                "cycles were recorded."
             ),
 
             (
-                "No evidence currently indicates a wider "
-                "network problem."
+                "No evidence currently indicates "
+                "a wider network problem."
             )
 
         ]
 
+    #
+    # Investigation order.
+    #
+
     for finding in report["top_findings"]:
 
-        if "device" in finding:
+        networks = finding.get(
+            "networks",
+            []
+        )
+
+        if networks:
+
+            for network in networks:
+
+                report["executive_summary"][
+                    "investigation_order"
+                ].append(
+                    f"Investigate {network} network path"
+                )
+
+        elif "device" in finding:
 
             report["executive_summary"][
                 "investigation_order"

@@ -952,6 +952,11 @@ def main():
         incidents()
         return
 
+    if args[0] == "analysis":
+
+        scout_analysis()
+        return
+
     if args[0] == "version":
 
         version()

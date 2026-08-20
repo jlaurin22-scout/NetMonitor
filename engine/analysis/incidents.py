@@ -6,6 +6,27 @@ from datetime import datetime, timedelta
 MERGE_WINDOW = timedelta(seconds=30)
 
 
+def network_from_name(name):
+
+    if name.startswith("LAN "):
+
+        return "LAN"
+
+    if name.startswith("WAN "):
+
+        return "WAN"
+
+    if name == "OPNSense":
+
+        return "LAN"
+
+    if name == "DIGIBox":
+
+        return "WAN"
+
+    return None
+
+
 def build_incidents(rows):
 
     raw = []
@@ -16,6 +37,7 @@ def build_incidents(rows):
     for row in reversed(rows):
 
         name = row["job_name"]
+        job_type = row["job_type"]
 
         if row["state"] == "DOWN":
 
@@ -25,6 +47,8 @@ def build_incidents(rows):
                     "start": row["timestamp"],
                     "end": None,
                     "objects": set(),
+                    "object_types": {},
+                    "networks": set()
                 }
 
             active.add(name)
@@ -33,6 +57,16 @@ def build_incidents(rows):
 
                 current["objects"].add(name)
 
+                current["object_types"][
+                    name
+                ] = job_type
+
+                network = network_from_name(name)
+
+                if network:
+
+                    current["networks"].add(network)
+
         elif row["state"] == "UP":
 
             active.discard(name)
@@ -40,6 +74,16 @@ def build_incidents(rows):
             if current:
 
                 current["objects"].add(name)
+
+                current["object_types"][
+                    name
+                ] = job_type
+
+                network = network_from_name(name)
+
+                if network:
+
+                    current["networks"].add(network)
 
             if current and not active:
 
@@ -62,7 +106,7 @@ def build_incidents(rows):
                 raw.append(current)
 
                 current = None
-                
+
     if not raw:
 
         return []
@@ -92,7 +136,15 @@ def build_incidents(rows):
             previous["objects"].update(
                 incident["objects"]
             )
-            
+
+            previous["object_types"].update(
+                incident["object_types"]
+            )
+
+            previous["networks"].update(
+                incident["networks"]
+            )
+
         else:
 
             incidents.append(incident)
