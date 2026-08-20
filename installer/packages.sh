@@ -15,6 +15,9 @@ install_packages()
         python3-psutil \
         python3-dnspython \
         python3-pysnmp4 \
+        ieee-data \
+        samba-common-bin \
+        avahi-utils \
         iputils-ping \
         dnsutils \
         net-tools \
