@@ -4,9 +4,11 @@ import json
 import ipaddress
 import os
 
+
 CUSTOMER_CONFIG = "/etc/netmonitor/netmonitor.json"
 DEVICES_CONFIG = "/etc/netmonitor/devices.json"
 SETTINGS_CONFIG = "/etc/netmonitor/settings.json"
+
 
 def validate_ip(ip):
 
@@ -19,6 +21,8 @@ def validate_ip(ip):
         raise Exception(
             f"Invalid IP address: {ip}"
         )
+
+
 def load_customer():
 
     if not os.path.exists(CUSTOMER_CONFIG):
@@ -53,11 +57,17 @@ def load_customer():
         ]
 
     return data
-    
+
+
 def save_customer(data):
 
     with open(CUSTOMER_CONFIG, "w") as f:
-        json.dump(data, f, indent=4)
+
+        json.dump(
+            data,
+            f,
+            indent=4
+        )
 
 
 def update_customer(customer, address):
@@ -68,6 +78,7 @@ def update_customer(customer, address):
     data["address"] = address
 
     save_customer(data)
+
 
 #
 # Device Configuration
@@ -89,17 +100,26 @@ def load_devices():
 
         return json.load(f)
 
+
 def save_devices(data):
 
     with open(DEVICES_CONFIG, "w") as f:
 
-        json.dump(data, f, indent=4)
+        json.dump(
+            data,
+            f,
+            indent=4
+        )
+
 
 def get_devices():
 
     data = load_devices()
 
-    devices = data.get("devices", [])
+    devices = data.get(
+        "devices",
+        []
+    )
 
     #
     # Future-proof:
@@ -108,10 +128,14 @@ def get_devices():
     #
     for device in devices:
 
-        device.setdefault("network_id", 1)
+        device.setdefault(
+            "network_id",
+            1
+        )
 
     return devices
-        
+
+
 def add_device(
     name,
     ip,
@@ -143,7 +167,10 @@ def add_device(
 
     gateway = network["gateway"]
 
-    devices = data.setdefault("devices", [])
+    devices = data.setdefault(
+        "devices",
+        []
+    )
 
     if ip == gateway:
 
@@ -199,6 +226,7 @@ def add_device(
 
     return device
 
+
 def update_device(
     device_id,
     name,
@@ -233,6 +261,7 @@ def update_device(
 
     raise Exception("Device not found")
 
+
 def remove_device(device_id):
 
     data = load_devices()
@@ -252,6 +281,7 @@ def remove_device(device_id):
             return removed
 
     raise Exception("Device not found")
+
 
 #
 # Settings
@@ -286,9 +316,8 @@ def load_settings():
                 "name": ""
             }
         }
-        with open(SETTINGS_CONFIG, "w") as f:
 
-            json.dump(data, f, indent=4)
+        save_settings(data)
 
         return data
 
@@ -306,7 +335,21 @@ def load_settings():
             "name": ""
         }
 
+        save_settings(data)
+
     return data
+
+
+def save_settings(data):
+
+    with open(SETTINGS_CONFIG, "w") as f:
+
+        json.dump(
+            data,
+            f,
+            indent=4
+        )
+
 
 #
 # Combined configuration
@@ -320,12 +363,17 @@ def load():
         "settings": load_settings()
     }
 
+
 def get_networks():
 
     customer = load_customer()
 
-    return customer.get("networks", [])
-    
+    return customer.get(
+        "networks",
+        []
+    )
+
+
 def add_network(
     name,
     interface,
@@ -383,6 +431,7 @@ def add_network(
 
     return next_id
 
+
 def get_network(network_id):
 
     networks = get_networks()
@@ -394,7 +443,8 @@ def get_network(network_id):
             return network
 
     raise Exception("Network not found")
-    
+
+
 def update_network(
     network_id,
     name,
@@ -425,7 +475,8 @@ def update_network(
             return network
 
     raise Exception("Network not found")
-    
+
+
 def remove_network(network_id):
 
     customer = load_customer()
