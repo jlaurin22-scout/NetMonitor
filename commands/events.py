@@ -62,11 +62,9 @@ def events(limit=50):
 
     for row in rows:
 
-        name = row["job_name"]
-
-        if ":" in name:
-
-            name = name.split(":", 1)[1]
+        name = display_name(
+            row["job_name"]
+        )
 
         print(
             f"{row['timestamp']:<20}"
@@ -76,6 +74,15 @@ def events(limit=50):
         )
 
     print()
+
+
+def display_name(name):
+
+    if ":" in name:
+
+        return name.split(":", 1)[1]
+
+    return name
 
 
 def format_duration(seconds):
@@ -166,7 +173,7 @@ def incidents():
 
             print(
                 f"Root Cause : "
-                f"{primary['object']}"
+                f"{display_name(primary['object'])}"
             )
 
             print(
@@ -187,7 +194,7 @@ def incidents():
             if dependents:
 
                 names = ", ".join(
-                    item["object"]
+                    display_name(item["object"])
                     for item in dependents
                 )
 
@@ -199,7 +206,7 @@ def incidents():
             if flapping:
 
                 names = ", ".join(
-                    item["object"]
+                    display_name(item["object"])
                     for item in flapping
                 )
 
@@ -211,7 +218,7 @@ def incidents():
             if secondary:
 
                 names = ", ".join(
-                    item["object"]
+                    display_name(item["object"])
                     for item in secondary
                 )
 
@@ -229,7 +236,7 @@ def incidents():
 
             print(
                 f"Primary : "
-                f"{primary['object']}"
+                f"{display_name(primary['object'])}"
             )
 
             print(
@@ -271,7 +278,7 @@ def incidents():
             for item in dependents:
 
                 print(
-                    f"  {item['object']:<24}"
+                    f"  {display_name(item['object']):<24}"
                     f"+{item['delay']}s"
                 )
 
@@ -285,7 +292,7 @@ def incidents():
             for item in flapping:
 
                 print(
-                    f"  {item['object']:<24}"
+                    f"  {display_name(item['object']):<24}"
                     f"{item['episodes']} episodes"
                 )
 
@@ -299,7 +306,7 @@ def incidents():
             for item in secondary:
 
                 print(
-                    f"  {item['object']:<24}"
+                    f"  {display_name(item['object']):<24}"
                     f"+{item['delay']}s"
                 )
 
@@ -319,7 +326,7 @@ def incidents():
             ):
 
                 print(
-                    f"  {episode['object']:<24}"
+                    f"  {display_name(episode['object']):<24}"
                     f"{episode['start'][11:19]} - "
                     f"{episode['end'][11:19]}  "
                     f"{format_duration(episode['duration'])}"
@@ -333,6 +340,8 @@ def incidents():
             incident["objects"]
         ):
 
-            print(f"  {obj}")
+            print(
+                f"  {display_name(obj)}"
+            )
 
         print()

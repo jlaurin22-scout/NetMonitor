@@ -54,7 +54,7 @@ def help_menu():
         print("1) Initialize")
         print("2) Status")
         print("3) Live Watch")
-        print("4) Events")
+        print("4) Events & Incidents")
         print("5) Scout Analysis")
         print()
         print("6) Devices")
@@ -89,7 +89,7 @@ def help_menu():
 
                 os.system("clear")
 
-                banner("Events")
+                banner("Events & Incidents")
 
                 print("1) View Recent Events")
                 print("2) View Incidents")

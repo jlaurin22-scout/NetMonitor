@@ -16,6 +16,15 @@ def parse_timestamp(value):
     )
 
 
+def display_name(name):
+
+    if ":" in name:
+
+        return name.split(":", 1)[1]
+
+    return name
+
+
 def network_from_name(name):
 
     if name.startswith("LAN "):
@@ -213,14 +222,14 @@ def analyze_incident(incident):
         incident["primary"]["confidence"] = "HIGH"
 
     incident["diagnosis"] = (
-        f"{first['object']} was the first monitored "
+        f"{display_name(first['object'])} was the first monitored "
         f"component to fail."
     )
 
     if dependents:
 
         names = ", ".join(
-            item["object"]
+            display_name(item["object"])
             for item in dependents
         )
 
@@ -233,7 +242,7 @@ def analyze_incident(incident):
     if flapping:
 
         names = ", ".join(
-            item["object"]
+            display_name(item["object"])
             for item in flapping
         )
 
@@ -245,7 +254,7 @@ def analyze_incident(incident):
     if secondary:
 
         names = ", ".join(
-            item["object"]
+            display_name(item["object"])
             for item in secondary
         )
 
