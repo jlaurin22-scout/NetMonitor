@@ -18,6 +18,7 @@ from engine.network import (
     cleanup_network_routes
 )
 
+
 def dns_display_name(server):
 
     if server in ("1.1.1.1", "1.0.0.1"):
@@ -91,6 +92,7 @@ def add_network_monitors(
         dns_name
     ]
 
+
 def main():
 
     print()
@@ -156,12 +158,6 @@ def main():
 
     devices = get_devices()
 
-    valid_jobs.extend(
-        device["name"] for device in devices
-    )
-
-    sync_status(valid_jobs)
-
     print(
         f"Adding {len(devices)} device monitor(s)..."
     )
@@ -182,6 +178,10 @@ def main():
         job_name = (
             f"{network_id}:"
             f"{device['name']}"
+        )
+
+        valid_jobs.append(
+            job_name
         )
 
         network = None
@@ -212,6 +212,8 @@ def main():
             "interval": settings["monitor"]["device_interval"]
         })
 
+    sync_status(valid_jobs)
+
     print()
     print("Engine started successfully.")
     print()
@@ -229,6 +231,7 @@ def main():
     finally:
 
         cleanup_network_routes(networks)
+
 
 if __name__ == "__main__":
     main()
