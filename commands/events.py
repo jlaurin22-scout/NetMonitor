@@ -3,6 +3,7 @@
 import ui
 from engine import database
 
+
 def clear_events():
 
     print("Clear Event History")
@@ -34,6 +35,7 @@ def clear_events():
     print()
     print("Event history successfully cleared.")
     print("Scout will now begin recording a new history.")
+
 
 def events(limit=50):
 
@@ -74,37 +76,200 @@ def events(limit=50):
         )
 
     print()
-    
-def incidents():
 
-    from datetime import datetime
+
+def format_duration(seconds):
+
+    seconds = int(seconds)
+
+    minutes, seconds = divmod(
+        seconds,
+        60
+    )
+
+    hours, minutes = divmod(
+        minutes,
+        60
+    )
+
+    if hours:
+
+        return f"{hours}h {minutes}m {seconds}s"
+
+    if minutes:
+
+        return f"{minutes}m {seconds}s"
+
+    return f"{seconds}s"
+
+
+def incidents():
 
     incidents = database.get_incidents()
 
     if not incidents:
+
         print("No incidents found.\n")
         return
 
-    for i, incident in enumerate(reversed(incidents), 1):
-
-        start = datetime.strptime(
-            incident["start"], "%Y-%m-%d %H:%M:%S"
-        )
-        end = datetime.strptime(
-            incident["end"], "%Y-%m-%d %H:%M:%S"
-        )
-
-        duration = end - start
+    for i, incident in enumerate(
+        reversed(incidents),
+        1
+    ):
 
         print(f"Incident {i}")
         print("-" * 60)
-        print(f"Started : {incident['start']}")
-        print(f"Ended   : {incident['end']}")
-        print(f"Duration: {duration}")
-        print("Affected:")
 
-        for obj in sorted(incident["objects"]):
-            print(f"  {obj}")
+        print(
+            f"Started : {incident['start']}"
+        )
+
+        print(
+            f"Ended   : {incident['end']}"
+        )
+
+        print(
+            f"Duration: "
+            f"{format_duration(incident['duration'])}"
+        )
 
         print()
 
+        primary = incident.get(
+            "primary"
+        )
+
+        if primary:
+
+            print("Diagnosis")
+            print("---------")
+
+            print(
+                f"Primary : "
+                f"{primary['object']}"
+            )
+
+            print(
+                f"Type    : "
+                f"{primary['job_type']}"
+            )
+
+            print(
+                f"Network : "
+                f"{primary['network'] or 'Unknown'}"
+            )
+
+            print(
+                f"Time    : "
+                f"{primary['timestamp']}"
+            )
+
+            print(
+                f"Confidence: "
+                f"{primary['confidence']}"
+            )
+
+            print()
+
+            print(
+                incident.get(
+                    "diagnosis",
+                    "No diagnosis available."
+                )
+            )
+
+            print()
+
+        dependents = incident.get(
+            "dependents",
+            []
+        )
+
+        if dependents:
+
+            print("Dependent Impact")
+            print("----------------")
+
+            for item in dependents:
+
+                print(
+                    f"  {item['object']:<24}"
+                    f"+{item['delay']}s"
+                )
+
+            print()
+
+        flapping = incident.get(
+            "flapping",
+            []
+        )
+
+        if flapping:
+
+            print("Flapping")
+            print("--------")
+
+            for item in flapping:
+
+                print(
+                    f"  {item['object']:<24}"
+                    f"{item['episodes']} episodes"
+                )
+
+            print()
+
+        secondary = incident.get(
+            "secondary",
+            []
+        )
+
+        if secondary:
+
+            print("Secondary Failures")
+            print("------------------")
+
+            for item in secondary:
+
+                print(
+                    f"  {item['object']:<24}"
+                    f"+{item['delay']}s"
+                )
+
+            print()
+
+        episodes = incident.get(
+            "episodes",
+            []
+        )
+
+        if episodes:
+
+            print("Failure Episodes")
+            print("----------------")
+
+            for episode in sorted(
+                episodes,
+                key=lambda item: (
+                    item["start"],
+                    item["object"]
+                )
+            ):
+
+                print(
+                    f"  {episode['object']:<24}"
+                    f"{episode['start'][11:19]} - "
+                    f"{episode['end'][11:19]}  "
+                    f"{format_duration(episode['duration'])}"
+                )
+
+            print()
+
+        print("Affected:")
+
+        for obj in sorted(
+            incident["objects"]
+        ):
+
+            print(f"  {obj}")
+
+        print()

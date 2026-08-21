@@ -41,47 +41,23 @@ def build_statistics(report, incidents, devices):
         )
 
         #
-        # Infrastructure failure.
+        # Count actual device outages independently
+        # of infrastructure incidents.
         #
-        # A failure confined to one network is NOT
-        # a site-wide major outage.
-        #
-        if infrastructure:
-
-            if len(networks) > 1:
-
-                report["major_outages"] += 1
-
-                report["major_events"].append(
-                    {
-                        "networks": sorted(networks),
-                        "objects": sorted(objects)
-                    }
-                )
-
-            else:
-
-                report["infrastructure_events"].append(
-                    {
-                        "networks": sorted(networks),
-                        "objects": sorted(objects)
-                    }
-                )
-
-            continue
-
-        #
-        # Only actual monitored devices remain here.
-        #
-        if len(monitored_devices) == 1:
-
-            device = monitored_devices[0]
-
-            report["single_device"] += 1
+        for device in monitored_devices:
 
             report["device_counter"][
                 devices.get(device, device)
             ] += 1
+
+        #
+        # If exactly one monitored device was affected,
+        # record a single-device incident even when it
+        # occurred during an infrastructure incident.
+        #
+        if len(monitored_devices) == 1:
+
+            report["single_device"] += 1
 
         elif len(monitored_devices) >= MAJOR_OUTAGE_THRESHOLD:
 
@@ -112,10 +88,38 @@ def build_statistics(report, incidents, devices):
                 for obj in monitored_devices
             )
 
-            for name in names:
-
-                report["device_counter"][name] += 1
-
             report["pair_counter"][
                 tuple(names)
             ] += 1
+
+        #
+        # Infrastructure failure.
+        #
+        # A failure confined to one network is NOT
+        # a site-wide major outage.
+        #
+        if infrastructure:
+
+            if len(networks) > 1:
+
+                report["major_outages"] += 1
+
+                report["major_events"].append(
+                    {
+                        "networks": sorted(networks),
+                        "objects": sorted(objects)
+                    }
+                )
+
+            else:
+
+                report["infrastructure_events"].append(
+                    {
+                        "networks": sorted(networks),
+                        "objects": sorted(
+                            infrastructure
+                        )
+                    }
+                )
+
+            continue
