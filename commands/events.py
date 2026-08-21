@@ -133,13 +133,96 @@ def incidents():
             f"{format_duration(incident['duration'])}"
         )
 
-        print()
-
         primary = incident.get(
             "primary"
         )
 
+        dependents = incident.get(
+            "dependents",
+            []
+        )
+
+        secondary = incident.get(
+            "secondary",
+            []
+        )
+
+        flapping = incident.get(
+            "flapping",
+            []
+        )
+
+        episodes = incident.get(
+            "episodes",
+            []
+        )
+
         if primary:
+
+            print()
+
+            print("Summary")
+            print("-------")
+
+            print(
+                f"Root Cause : "
+                f"{primary['object']}"
+            )
+
+            print(
+                f"Type       : "
+                f"{primary['job_type']}"
+            )
+
+            print(
+                f"Network    : "
+                f"{primary['network'] or 'Unknown'}"
+            )
+
+            print(
+                f"Confidence : "
+                f"{primary['confidence']}"
+            )
+
+            if dependents:
+
+                names = ", ".join(
+                    item["object"]
+                    for item in dependents
+                )
+
+                print(
+                    f"Impact     : "
+                    f"{names}"
+                )
+
+            if flapping:
+
+                names = ", ".join(
+                    item["object"]
+                    for item in flapping
+                )
+
+                print(
+                    f"Flapping   : "
+                    f"{names}"
+                )
+
+            if secondary:
+
+                names = ", ".join(
+                    item["object"]
+                    for item in secondary
+                )
+
+                print(
+                    f"Secondary  : "
+                    f"{names}"
+                )
+
+        if primary:
+
+            print()
 
             print("Diagnosis")
             print("---------")
@@ -180,11 +263,6 @@ def incidents():
 
             print()
 
-        dependents = incident.get(
-            "dependents",
-            []
-        )
-
         if dependents:
 
             print("Dependent Impact")
@@ -198,11 +276,6 @@ def incidents():
                 )
 
             print()
-
-        flapping = incident.get(
-            "flapping",
-            []
-        )
 
         if flapping:
 
@@ -218,11 +291,6 @@ def incidents():
 
             print()
 
-        secondary = incident.get(
-            "secondary",
-            []
-        )
-
         if secondary:
 
             print("Secondary Failures")
@@ -236,11 +304,6 @@ def incidents():
                 )
 
             print()
-
-        episodes = incident.get(
-            "episodes",
-            []
-        )
 
         if episodes:
 
