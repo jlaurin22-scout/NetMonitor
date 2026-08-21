@@ -2,6 +2,7 @@
 
 import sqlite3
 from engine.analysis.incidents import build_incidents
+from engine.config import get_networks, get_devices
 from datetime import datetime
 
 DB = "/var/lib/netmonitor/netmonitor.db"
@@ -216,7 +217,14 @@ def get_incidents():
 
     rows = get_recent_events(1000)
 
-    return build_incidents(rows)
+    networks = get_networks()
+    devices = get_devices()
+
+    return build_incidents(
+        rows,
+        networks,
+        devices
+    )
 
 
 def remove_status(job_name):

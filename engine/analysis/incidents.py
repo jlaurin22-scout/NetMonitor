@@ -16,16 +16,55 @@ def parse_timestamp(value):
     )
 
 
-def display_name(name):
+def network_from_name(
+    name,
+    networks=None,
+    devices=None
+):
 
     if ":" in name:
 
-        return name.split(":", 1)[1]
+        prefix, device_name = name.split(
+            ":",
+            1
+        )
 
-    return name
+        try:
 
+            network_id = int(prefix)
 
-def network_from_name(name):
+        except ValueError:
+
+            network_id = None
+
+        if network_id is not None:
+
+            if devices:
+
+                for device in devices:
+
+                    if (
+                        device["name"]
+                        ==
+                        device_name
+                    ):
+
+                        network_id = device.get(
+                            "network_id",
+                            network_id
+                        )
+
+                        break
+
+            if networks:
+
+                for network in networks:
+
+                    if network["id"] == network_id:
+
+                        return network["name"]
+
+        name = device_name
 
     if name.startswith("LAN "):
 
@@ -46,13 +85,19 @@ def network_from_name(name):
     return None
 
 
-def create_episode(row):
+def create_episode(
+    row,
+    networks=None,
+    devices=None
+):
 
     return {
         "object": row["job_name"],
         "job_type": row["job_type"],
         "network": network_from_name(
-            row["job_name"]
+            row["job_name"],
+            networks,
+            devices
         ),
         "start": row["timestamp"],
         "end": None,
@@ -60,7 +105,10 @@ def create_episode(row):
     }
 
 
-def finalize_episode(episode, timestamp):
+def finalize_episode(
+    episode,
+    timestamp
+):
 
     episode["end"] = timestamp
 
@@ -112,14 +160,6 @@ def analyze_incident(incident):
         first["start"]
     )
 
-    first_objects = set()
-
-    for episode in episodes:
-
-        first_objects.add(
-            episode["object"]
-        )
-
     dependents = []
     secondary = []
 
@@ -135,11 +175,6 @@ def analyze_incident(incident):
 
         object_name = episode["object"]
 
-        #
-        # A later episode from an object that
-        # already failed is a repeat/flapping
-        # episode, not a secondary failure.
-        #
         previous_object_episode = any(
             previous["object"] == object_name
             and
@@ -222,14 +257,14 @@ def analyze_incident(incident):
         incident["primary"]["confidence"] = "HIGH"
 
     incident["diagnosis"] = (
-        f"{display_name(first['object'])} was the first monitored "
+        f"{first['object']} was the first monitored "
         f"component to fail."
     )
 
     if dependents:
 
         names = ", ".join(
-            display_name(item["object"])
+            item["object"]
             for item in dependents
         )
 
@@ -242,7 +277,7 @@ def analyze_incident(incident):
     if flapping:
 
         names = ", ".join(
-            display_name(item["object"])
+            item["object"]
             for item in flapping
         )
 
@@ -254,7 +289,7 @@ def analyze_incident(incident):
     if secondary:
 
         names = ", ".join(
-            display_name(item["object"])
+            item["object"]
             for item in secondary
         )
 
@@ -264,7 +299,11 @@ def analyze_incident(incident):
         )
 
 
-def build_incidents(rows):
+def build_incidents(
+    rows,
+    networks=None,
+    devices=None
+):
 
     raw = []
 
@@ -292,7 +331,9 @@ def build_incidents(rows):
             if name not in active:
 
                 episode = create_episode(
-                    row
+                    row,
+                    networks,
+                    devices
                 )
 
                 active[name] = episode
@@ -310,7 +351,9 @@ def build_incidents(rows):
             ] = job_type
 
             network = network_from_name(
-                name
+                name,
+                networks,
+                devices
             )
 
             if network:
@@ -343,7 +386,9 @@ def build_incidents(rows):
                 ] = job_type
 
                 network = network_from_name(
-                    name
+                    name,
+                    networks,
+                    devices
                 )
 
                 if network:
