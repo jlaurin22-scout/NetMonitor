@@ -16,6 +16,53 @@ def parse_timestamp(value):
     )
 
 
+def display_name_from_name(
+    name,
+    devices=None
+):
+
+    if ":" not in name:
+
+        return name
+
+    prefix, device_name = name.split(
+        ":",
+        1
+    )
+
+    try:
+
+        network_id = int(prefix)
+
+    except ValueError:
+
+        return name
+
+    if devices:
+
+        for device in devices:
+
+            if (
+                device["name"]
+                ==
+                device_name
+            ):
+
+                configured_network = device.get(
+                    "network_id"
+                )
+
+                if (
+                    configured_network is None
+                    or
+                    configured_network == network_id
+                ):
+
+                    return device["name"]
+
+    return device_name
+
+
 def network_from_name(
     name,
     networks=None,
@@ -92,7 +139,10 @@ def create_episode(
 ):
 
     return {
-        "object": row["job_name"],
+        "object": display_name_from_name(
+            row["job_name"],
+            devices
+        ),
         "job_type": row["job_type"],
         "network": network_from_name(
             row["job_name"],
@@ -315,6 +365,11 @@ def build_incidents(
         name = row["job_name"]
         job_type = row["job_type"]
 
+        display_name = display_name_from_name(
+            name,
+            devices
+        )
+
         if row["state"] == "DOWN":
 
             if current is None:
@@ -343,11 +398,11 @@ def build_incidents(
                 )
 
             current["objects"].add(
-                name
+                display_name
             )
 
             current["object_types"][
-                name
+                display_name
             ] = job_type
 
             network = network_from_name(
@@ -378,11 +433,11 @@ def build_incidents(
             if current:
 
                 current["objects"].add(
-                    name
+                    display_name
                 )
 
                 current["object_types"][
-                    name
+                    display_name
                 ] = job_type
 
                 network = network_from_name(

@@ -208,26 +208,59 @@ def make_table(
     font_size=8,
 ):
 
+    table_data = []
+
+    for row_index, row in enumerate(data):
+
+        table_row = []
+
+        for cell in row:
+
+            if isinstance(cell, str):
+
+                if header and row_index == 0:
+
+                    style = ParagraphStyle(
+                        "TableHeader",
+                        fontName="Helvetica-Bold",
+                        fontSize=font_size,
+                        leading=font_size + 2,
+                        textColor=colors.white,
+                    )
+
+                else:
+
+                    style = ParagraphStyle(
+                        "TableCell",
+                        fontName="Helvetica",
+                        fontSize=font_size,
+                        leading=font_size + 2,
+                    )
+
+                table_row.append(
+                    Paragraph(
+                        cell.replace(
+                            "\n",
+                            "<br/>"
+                        ),
+                        style
+                    )
+                )
+
+            else:
+
+                table_row.append(cell)
+
+        table_data.append(table_row)
+
     table = Table(
-        data,
+        table_data,
         colWidths=widths,
         repeatRows=1 if header else 0,
         hAlign="LEFT",
     )
 
     commands = [
-        (
-            "FONTNAME",
-            (0, 0),
-            (-1, 0),
-            "Helvetica-Bold",
-        ),
-        (
-            "FONTSIZE",
-            (0, 0),
-            (-1, -1),
-            font_size,
-        ),
         (
             "VALIGN",
             (0, 0),
@@ -288,7 +321,7 @@ def make_table(
 
     for row in range(
         1 if header else 0,
-        len(data)
+        len(table_data)
     ):
 
         if row % 2 == 0:
@@ -307,7 +340,6 @@ def make_table(
     )
 
     return table
-
 
 def add_page_number(canvas, document):
 
