@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+
 from commands.version import version
 from commands.service import service
 from commands.status import status
@@ -24,6 +25,7 @@ from commands.events import (
     incidents,
 )
 from commands.analysis import scout_analysis
+from commands.report import customer_report
 from setup.networks import run as network_setup
 from setup.devices import run as device_setup
 from setup.installer import run as install_appliance
@@ -57,12 +59,14 @@ def help_menu():
         print("4) Events & Incidents")
         print("5) Scout Analysis")
         print()
+
         print("6) Devices")
         print("7) Configuration")
         print("8) Service")
         print("V) Version")
         print("R) Reset")
         print()
+
         print("Q) Quit")
         print()
 
@@ -222,6 +226,7 @@ def customer_menu():
     print()
     input("Press ENTER to continue...")
 
+
 def address_menu():
 
     banner()
@@ -275,6 +280,7 @@ def address_menu():
     print()
     input("Press ENTER to continue...")
 
+
 def notifications_menu():
 
     os.system("clear")
@@ -284,6 +290,7 @@ def notifications_menu():
         banner("Notifications")
 
         settings = config.load_settings()
+
         ntfy = settings.get(
             "ntfy",
             {}
@@ -321,13 +328,16 @@ def notifications_menu():
         )
         print(f"Server  : {server}")
         print(
-            f"Topic   : {topic if topic else 'Not configured'}"
+            f"Topic   : "
+            f"{topic if topic else 'Not configured'}"
         )
         print(
-            f"Token   : {'Configured' if token else 'Not configured'}"
+            f"Token   : "
+            f"{'Configured' if token else 'Not configured'}"
         )
         print(
-            f"Name    : {name if name else 'Not configured'}"
+            f"Name    : "
+            f"{name if name else 'Not configured'}"
         )
         print()
 
@@ -579,6 +589,7 @@ def configuration_menu():
             print()
             ui.error("Invalid selection.")
 
+
 def networks_menu():
 
     os.system("clear")
@@ -646,6 +657,7 @@ def add_network_menu():
     if name.lower() == "b":
 
         return
+
     interface = input("Interface         : ").strip()
     ip = input("IP Address        : ").strip()
     prefix = int(input("Prefix            : ").strip())
@@ -752,6 +764,7 @@ def edit_network_menu():
         return
 
     print()
+
     name = input(
         f"Network Name      [{selected['name']}] : "
     ).strip()
@@ -806,7 +819,8 @@ def edit_network_menu():
         gateway = selected["gateway"]
 
     gateway_name = input(
-        f"Router / Firewall  [{selected.get('gateway_name', 'Router / Firewall')}] : "
+        f"Router / Firewall  "
+        f"[{selected.get('gateway_name', 'Router / Firewall')}] : "
     ).strip()
 
     if gateway_name == "":
@@ -824,8 +838,17 @@ def edit_network_menu():
         ]
     )
 
-    dns1_default = current_dns[0] if len(current_dns) > 0 else ""
-    dns2_default = current_dns[1] if len(current_dns) > 1 else ""
+    dns1_default = (
+        current_dns[0]
+        if len(current_dns) > 0
+        else ""
+    )
+
+    dns2_default = (
+        current_dns[1]
+        if len(current_dns) > 1
+        else ""
+    )
 
     dns1 = input(
         f"Primary DNS       [{dns1_default}] : "
@@ -845,6 +868,7 @@ def edit_network_menu():
 
     print()
     print("Save changes? (Y/N)")
+
     answer = input(
         "Selection: "
     ).strip().lower()
@@ -873,7 +897,11 @@ def edit_network_menu():
         )
 
         subprocess.run(
-            ["systemctl", "restart", "netmonitor"],
+            [
+                "systemctl",
+                "restart",
+                "netmonitor"
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
@@ -920,7 +948,7 @@ def device_menu():
 
             os.system("clear")
             continue
-            
+
         elif choice == "3":
 
             os.system("clear")
@@ -1001,7 +1029,8 @@ def reset():
     banner()
 
     answer = input(
-        "This will erase the current NetMonitor configuration.\nContinue? (Y/N): "
+        "This will erase the current NetMonitor configuration.\n"
+        "Continue? (Y/N): "
     ).strip().lower()
 
     if not answer.startswith("y"):
@@ -1011,7 +1040,13 @@ def reset():
         print()
         return
 
-    subprocess.run(["systemctl", "stop", "netmonitor"])
+    subprocess.run(
+        [
+            "systemctl",
+            "stop",
+            "netmonitor"
+        ]
+    )
 
     files = [
         "/etc/netmonitor/netmonitor.json",
@@ -1022,8 +1057,11 @@ def reset():
     for filename in files:
 
         try:
+
             Path(filename).unlink()
+
         except FileNotFoundError:
+
             pass
 
     config.save_customer(
@@ -1056,7 +1094,9 @@ def watch():
     print()
     print("Starting Live Watch...")
     print()
-    print("Press Ctrl+C at any time to return to the Main Menu.")
+    print(
+        "Press Ctrl+C at any time to return to the Main Menu."
+    )
     print()
     input("Press Enter to begin...")
 
@@ -1072,18 +1112,25 @@ def watch():
 
             print("Customer")
             print("--------")
+
             print(
                 f"Customer : "
                 f"{customer.get('customer', 'Unknown')}"
             )
+
             print(
                 f"Address  : "
                 f"{customer.get('address', 'Unknown')}"
             )
+
             print()
 
             service = subprocess.run(
-                ["systemctl", "is-active", "netmonitor"],
+                [
+                    "systemctl",
+                    "is-active",
+                    "netmonitor"
+                ],
                 capture_output=True,
                 text=True
             ).stdout.strip()
@@ -1151,6 +1198,7 @@ def watch():
         print("Returning to Main Menu...")
         time.sleep(1)
 
+
 def main():
 
     args = sys.argv[1:]
@@ -1202,6 +1250,11 @@ def main():
         scout_analysis()
         return
 
+    if args[0] == "report":
+
+        customer_report()
+        return
+
     if args[0] == "version":
 
         version()
@@ -1216,7 +1269,9 @@ def main():
 
         if len(args) < 2:
 
-            print("Usage: nm device scan|add|list|remove")
+            print(
+                "Usage: nm device scan|add|list|remove"
+            )
             return
 
         if args[1] == "scan":

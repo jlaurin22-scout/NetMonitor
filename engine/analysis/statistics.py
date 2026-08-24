@@ -2,11 +2,46 @@
 
 MAJOR_OUTAGE_THRESHOLD = 10
 
+BRIEF_INTERRUPTION_SECONDS = 30
+MAJOR_SERVICE_OUTAGE_SECONDS = 300
+
 INFRASTRUCTURE_TYPES = {
     "gateway",
     "internet",
     "dns"
 }
+
+CRITICAL_SERVICE_TYPES = {
+    "gateway",
+    "internet",
+    "dns"
+}
+
+
+def classify_service_outage(
+    duration,
+    object_types
+):
+
+    critical_services = [
+        object_type
+        for object_type in object_types.values()
+        if object_type in CRITICAL_SERVICE_TYPES
+    ]
+
+    if len(set(critical_services)) > 1:
+
+        return "MAJOR OUTAGE"
+
+    if duration > MAJOR_SERVICE_OUTAGE_SECONDS:
+
+        return "MAJOR SERVICE OUTAGE"
+
+    if duration >= BRIEF_INTERRUPTION_SECONDS:
+
+        return "SERVICE OUTAGE"
+
+    return "BRIEF INTERRUPTION"
 
 
 def build_statistics(report, incidents, devices):
@@ -95,11 +130,52 @@ def build_statistics(report, incidents, devices):
         #
         # Infrastructure failure.
         #
-        # A failure confined to one network is NOT
-        # a site-wide major outage.
-        #
         if infrastructure:
 
+            service_objects = {
+                devices.get(
+                    obj,
+                    obj
+                ): object_types.get(
+                    obj
+                )
+                for obj in infrastructure
+            }
+
+            duration = incident.get(
+                "duration",
+                0
+            )
+
+            severity = classify_service_outage(
+                duration,
+                service_objects
+            )
+
+            report["service_outages"].append(
+                {
+                    "start": incident.get(
+                        "start"
+                    ),
+                    "end": incident.get(
+                        "end"
+                    ),
+                    "duration": duration,
+                    "severity": severity,
+                    "networks": sorted(
+                        networks
+                    ),
+                    "objects": sorted(
+                        service_objects
+                    ),
+                    "object_types": service_objects
+                }
+            )
+
+            #
+            # A failure affecting multiple networks
+            # remains a major infrastructure event.
+            #
             if len(networks) > 1:
 
                 report["major_outages"] += 1

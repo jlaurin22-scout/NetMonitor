@@ -19,6 +19,8 @@ def create_report(incidents, devices_monitored):
 
         "major_outages": 0,
 
+        "service_outages": [],
+
         "device_counter": Counter(),
 
         "pair_counter": Counter(),

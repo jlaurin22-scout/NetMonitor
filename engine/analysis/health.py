@@ -1,13 +1,28 @@
 #!/usr/bin/env python3
 
+
 def calculate_health(report):
 
+    #
+    # A customer-facing service outage is always
+    # considered a significant network health problem.
+    #
+    if report.get("service_outages"):
+
+        report["health"] = "POOR"
+        return
+
+    #
+    # Major infrastructure outages remain a
+    # significant network health problem.
+    #
     if report["major_outages"]:
 
         report["health"] = "POOR"
         return
 
     if not report["device_counter"]:
+
         return
 
     highest = report["device_counter"].most_common(1)[0][1]
