@@ -2,7 +2,7 @@
 
 install_service()
 {
-    echo "Installing systemd service..."
+    echo "Installing systemd services..."
 
     cat > "$SERVICE_DIR/netmonitor.service" << EOF
 [Unit]
@@ -23,9 +23,32 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 EOF
 
-    systemctl daemon-reload
-    systemctl enable netmonitor
+    cat > "$SERVICE_DIR/netmonitor-web.service" << EOF
+[Unit]
+Description=Scout Network Monitor Web GUI
+After=network-online.target netmonitor.service
+Wants=network-online.target
+Requires=netmonitor.service
 
-    echo "Systemd service installed."
+[Service]
+Type=simple
+User=$INSTALL_USER
+Group=$INSTALL_GROUP
+WorkingDirectory=$PROJECT_DIR
+ExecStart=/usr/bin/gunicorn --bind 0.0.0.0:8080 --workers 1 --access-logfile - --error-logfile - web.app:app
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+
+    systemctl enable netmonitor
+    systemctl enable netmonitor-web
+
+    echo "Systemd services installed."
     echo
 }

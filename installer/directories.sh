@@ -8,7 +8,7 @@ create_directories()
     mkdir -p "$DATA_DIR"
     mkdir -p "$DATA_DIR/reports"
 
-    chown -R watchdog:watchdog "$DATA_DIR"
+    chown -R "$INSTALL_USER:$INSTALL_GROUP" "$DATA_DIR"
 
     echo "Directories created."
     echo

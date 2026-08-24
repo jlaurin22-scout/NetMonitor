@@ -16,6 +16,8 @@ install_packages()
         python3-dnspython \
         python3-pysnmp4 \
         python3-reportlab \
+        python3-flask \
+        gunicorn \
         ieee-data \
         samba-common-bin \
         avahi-utils \
@@ -23,7 +25,6 @@ install_packages()
         dnsutils \
         net-tools \
         iproute2 \
-        python3-flask \
         curl
 
     echo
