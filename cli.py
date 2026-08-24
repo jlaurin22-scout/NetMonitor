@@ -58,11 +58,12 @@ def help_menu():
         print("3) Live Watch")
         print("4) Events & Incidents")
         print("5) Scout Analysis")
+        print("6) Customer Report")
         print()
 
-        print("6) Devices")
-        print("7) Configuration")
-        print("8) Service")
+        print("7) Devices")
+        print("8) Configuration")
+        print("9) Service")
         print("V) Version")
         print("R) Reset")
         print()
@@ -136,16 +137,21 @@ def help_menu():
         elif choice == "6":
 
             os.system("clear")
+            customer_report()
+
+        elif choice == "7":
+
+            os.system("clear")
             device_menu()
             continue
 
-        elif choice == "7":
+        elif choice == "8":
 
             os.system("clear")
             configuration_menu()
             continue
 
-        elif choice == "8":
+        elif choice == "9":
 
             os.system("clear")
             service()
@@ -166,10 +172,9 @@ def help_menu():
             os.system("clear")
             return
 
-        if choice not in ("4", "7", "8", "q"):
+        if choice not in ("3", "4", "6", "7", "8", "q"):
 
             input("\nPress Enter to continue...")
-
 
 def customer_menu():
 
