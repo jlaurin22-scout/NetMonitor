@@ -5,11 +5,13 @@ import sys
 
 from flask import Flask
 
+
 PROJECT_DIR = os.path.dirname(
     os.path.dirname(
         os.path.abspath(__file__)
     )
 )
+
 
 if PROJECT_DIR not in sys.path:
 
@@ -32,8 +34,14 @@ def create_app():
         network_is_healthy
     )
 
+    from web.routes.api import api
+
     app.register_blueprint(
         dashboard
+    )
+
+    app.register_blueprint(
+        api
     )
 
     app.jinja_env.globals[

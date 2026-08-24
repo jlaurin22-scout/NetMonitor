@@ -47,20 +47,36 @@
 
     </div>
 
-    <div class="service-indicator">
+    <div
+        class="service-area"
+        id="service-state"
+    >
 
-        <span
-            class="
-                status-dot
-                {% if service_up %}
-                    dot-up
-                {% else %}
-                    dot-down
-                {% endif %}
-            "
-        ></span>
+        <div class="service-indicator">
 
-        Monitoring {{ service_state }}
+            <span
+                class="
+                    status-dot
+                    {% if service_up %}
+                        dot-up
+                    {% else %}
+                        dot-down
+                    {% endif %}
+                "
+            ></span>
+
+            <span class="service-label">
+                Monitoring {{ service_state }}
+            </span>
+
+        </div>
+
+        <div
+            class="last-updated"
+            id="last-updated"
+        >
+            Loading live status...
+        </div>
 
     </div>
 
@@ -106,7 +122,10 @@
 <main class="dashboard">
 
 
-    <section class="health-panel">
+    <section
+        class="health-panel"
+        id="overall-health"
+    >
 
         <div>
 
@@ -123,7 +142,9 @@
 
                 <span class="health-dot"></span>
 
-                {{ health.label }}
+                <span class="health-label">
+                    {{ health.label }}
+                </span>
 
             </div>
 
@@ -137,7 +158,10 @@
 
         {% for network in networks %}
 
-        <div class="network-card">
+        <div
+            class="network-card"
+            data-network="{{ network.name }}"
+        >
 
             <div class="network-header">
 
@@ -146,6 +170,7 @@
                 </div>
 
                 {% if network_is_healthy(network) %}
+
                     <span
                         class="
                             network-state
@@ -154,7 +179,9 @@
                     >
                         HEALTHY
                     </span>
+
                 {% else %}
+
                     <span
                         class="
                             network-state
@@ -163,6 +190,7 @@
                     >
                         ATTENTION
                     </span>
+
                 {% endif %}
 
             </div>
@@ -173,7 +201,10 @@
 
                 {% if network.gateway %}
 
-                <div class="check-row">
+                <div
+                    class="check-row"
+                    data-check="gateway"
+                >
 
                     <span>
                         Gateway
@@ -203,7 +234,10 @@
 
                 {% if network.internet %}
 
-                <div class="check-row">
+                <div
+                    class="check-row"
+                    data-check="internet"
+                >
 
                     <span>
                         Internet
@@ -233,7 +267,10 @@
 
                 {% if network.dns %}
 
-                <div class="check-row">
+                <div
+                    class="check-row"
+                    data-check="dns"
+                >
 
                     <span>
                         DNS
@@ -286,7 +323,19 @@
                         {% endif %}
                     "
                 >
-                    {{ up_devices }} / {{ device_total }} UP
+
+                    <span id="device-up">
+                        {{ up_devices }}
+                    </span>
+
+                    /
+
+                    <span id="device-total">
+                        {{ device_total }}
+                    </span>
+
+                    UP
+
                 </span>
 
             </div>
@@ -294,9 +343,14 @@
 
             <div class="device-summary-number">
 
-                {{ up_devices }}
+                <span
+                    class="device-summary-count"
+                    id="device-up-large"
+                >
+                    {{ up_devices }}
+                </span>
 
-                <span>
+                <span class="device-summary-unit">
                     UP
                 </span>
 
@@ -307,7 +361,10 @@
 
             <div class="device-summary-down">
 
-                {{ down_devices }}
+                <span id="device-down">
+                    {{ down_devices }}
+                </span>
+
                 DOWN
 
             </div>
@@ -398,7 +455,10 @@
         </div>
 
 
-        <div class="device-list">
+        <div
+            class="device-list"
+            id="device-list"
+        >
 
 
             {% for device in devices %}
@@ -461,6 +521,14 @@
     Scout Network Monitor
 
 </footer>
+
+
+<script
+    src="{{ url_for(
+        'static',
+        filename='js/dashboard.js'
+    ) }}"
+></script>
 
 
 </body>
