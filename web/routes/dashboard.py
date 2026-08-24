@@ -275,31 +275,43 @@ def get_device_counts(device_rows):
 
     standby_devices = get_standby_devices()
 
-    monitored_devices = [
-        row
-        for row in device_rows
-        if not is_standby_device(
-            row,
-            standby_devices
-        )
-    ]
+    total_devices = len(
+        device_rows
+    )
 
     up_devices = sum(
         1
-        for row in monitored_devices
+        for row in device_rows
         if row["state"] == "UP"
+    )
+
+    standby_count = sum(
+        1
+        for row in device_rows
+        if is_standby_device(
+            row,
+            standby_devices
+        )
     )
 
     down_devices = sum(
         1
-        for row in monitored_devices
-        if row["state"] != "UP"
+        for row in device_rows
+        if (
+            row["state"] != "UP"
+            and
+            not is_standby_device(
+                row,
+                standby_devices
+            )
+        )
     )
 
     return (
-        len(monitored_devices),
+        total_devices,
         up_devices,
-        down_devices
+        down_devices,
+        standby_count
     )
 
 
@@ -327,7 +339,8 @@ def index():
     (
         device_total,
         up_devices,
-        down_devices
+        down_devices,
+        standby_count
     ) = get_device_counts(
         device_rows
     )
@@ -354,5 +367,6 @@ def index():
         device_total=device_total,
         up_devices=up_devices,
         down_devices=down_devices,
+        standby_count=standby_count,
         devices=device_rows[:8],
     )

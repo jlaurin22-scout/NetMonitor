@@ -379,8 +379,21 @@
 
             {% endif %}
 
-        </div>
+            {% if standby_count > 0 %}
 
+            <div class="device-summary-standby">
+
+                <span id="device-standby">
+                    {{ standby_count }}
+                </span>
+
+                STANDBY
+
+            </div>
+
+            {% endif %}
+
+        </div>
 
     </section>
 

@@ -279,6 +279,11 @@ function updateDevices(data) {
             "device-down"
         );
 
+    const standby =
+        document.getElementById(
+            "device-standby"
+        );
+
     if (total) {
 
         total.textContent =
@@ -304,6 +309,13 @@ function updateDevices(data) {
 
         down.textContent =
             data.devices.down;
+
+    }
+
+    if (standby) {
+
+        standby.textContent =
+            data.devices.standby;
 
     }
 

@@ -40,7 +40,8 @@ def status():
     (
         device_total,
         up_devices,
-        down_devices
+        down_devices,
+        standby_count
     ) = get_device_counts(
         device_rows
     )
@@ -107,6 +108,7 @@ def status():
                 "total": device_total,
                 "up": up_devices,
                 "down": down_devices,
+                "standby": standby_count,
                 "rows": devices,
             },
             "networks": network_data,
