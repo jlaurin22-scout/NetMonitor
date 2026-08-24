@@ -23,6 +23,7 @@ install_packages()
         dnsutils \
         net-tools \
         iproute2 \
+        python3-flask \
         curl
 
     echo
