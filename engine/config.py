@@ -112,6 +112,49 @@ def save_devices(data):
         )
 
 
+def get_device_monitoring_mode(device):
+
+    monitoring = device.get(
+        "monitoring",
+        {}
+    )
+
+    mode = monitoring.get(
+        "mode",
+        "normal"
+    )
+
+    if mode not in (
+        "normal",
+        "standby",
+        "conditional"
+    ):
+
+        return "normal"
+
+    return mode
+
+
+def set_device_monitoring_mode(
+    device,
+    mode
+):
+
+    if mode not in (
+        "normal",
+        "standby",
+        "conditional"
+    ):
+
+        raise Exception(
+            f"Invalid monitoring mode: {mode}"
+        )
+
+    device["monitoring"] = {
+        "mode": mode
+    }
+
+
 def get_devices():
 
     data = load_devices()
@@ -132,6 +175,23 @@ def get_devices():
             "network_id",
             1
         )
+
+        #
+        # Every existing device defaults to normal
+        # monitoring if no policy has been configured.
+        #
+        if "monitoring" not in device:
+
+            device["monitoring"] = {
+                "mode": "normal"
+            }
+
+        else:
+
+            device["monitoring"].setdefault(
+                "mode",
+                "normal"
+            )
 
     return devices
 
@@ -217,6 +277,9 @@ def add_device(
         "checks": {
             "ping": ping,
             "snmp": snmp
+        },
+        "monitoring": {
+            "mode": "normal"
         }
     }
 
@@ -233,7 +296,8 @@ def update_device(
     ip,
     ping,
     snmp,
-    network_id=None
+    network_id=None,
+    monitoring_mode=None
 ):
 
     data = load_devices()
@@ -254,6 +318,19 @@ def update_device(
             elif "network_id" not in device:
 
                 device["network_id"] = 1
+
+            if monitoring_mode is not None:
+
+                set_device_monitoring_mode(
+                    device,
+                    monitoring_mode
+                )
+
+            elif "monitoring" not in device:
+
+                device["monitoring"] = {
+                    "mode": "normal"
+                }
 
             save_devices(data)
 

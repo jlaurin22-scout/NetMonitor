@@ -200,6 +200,41 @@ def network_is_healthy(network):
     )
 
 
+def get_standby_devices():
+
+    devices = config.get_devices()
+
+    standby = set()
+
+    for device in devices:
+
+        if (
+            config.get_device_monitoring_mode(device)
+            ==
+            "standby"
+        ):
+
+            standby.add(
+                device.get("name")
+            )
+
+    return standby
+
+
+def is_standby_device(row, standby_devices):
+
+    if row["job_type"] != "device":
+
+        return False
+
+    return (
+        display_name(
+            row["job_name"]
+        )
+        in standby_devices
+    )
+
+
 def overall_health(
     service_up,
     rows
@@ -212,20 +247,60 @@ def overall_health(
             "class": "state-down",
         }
 
-    if any(
-        row["state"] != "UP"
-        for row in rows
-    ):
+    standby_devices = get_standby_devices()
 
-        return {
-            "label": "ATTENTION",
-            "class": "state-warning",
-        }
+    for row in rows:
+
+        if (
+            row["state"] != "UP"
+            and
+            not is_standby_device(
+                row,
+                standby_devices
+            )
+        ):
+
+            return {
+                "label": "ATTENTION",
+                "class": "state-warning",
+            }
 
     return {
         "label": "HEALTHY",
         "class": "state-up",
     }
+
+
+def get_device_counts(device_rows):
+
+    standby_devices = get_standby_devices()
+
+    monitored_devices = [
+        row
+        for row in device_rows
+        if not is_standby_device(
+            row,
+            standby_devices
+        )
+    ]
+
+    up_devices = sum(
+        1
+        for row in monitored_devices
+        if row["state"] == "UP"
+    )
+
+    down_devices = sum(
+        1
+        for row in monitored_devices
+        if row["state"] != "UP"
+    )
+
+    return (
+        len(monitored_devices),
+        up_devices,
+        down_devices
+    )
 
 
 @dashboard.route("/")
@@ -249,16 +324,12 @@ def index():
         if row["job_type"] == "device"
     ]
 
-    up_devices = sum(
-        1
-        for row in device_rows
-        if row["state"] == "UP"
-    )
-
-    down_devices = (
-        len(device_rows)
-        -
-        up_devices
+    (
+        device_total,
+        up_devices,
+        down_devices
+    ) = get_device_counts(
+        device_rows
     )
 
     health = overall_health(
@@ -280,7 +351,7 @@ def index():
         service_up=service_up,
         health=health,
         networks=networks,
-        device_total=len(device_rows),
+        device_total=device_total,
         up_devices=up_devices,
         down_devices=down_devices,
         devices=device_rows[:8],

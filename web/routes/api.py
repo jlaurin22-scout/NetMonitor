@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify
 from web.routes.dashboard import (
     build_network_status,
     build_status_rows,
+    get_device_counts,
     get_service_state,
     overall_health,
 )
@@ -36,16 +37,12 @@ def status():
         if row["job_type"] == "device"
     ]
 
-    up_devices = sum(
-        1
-        for row in device_rows
-        if row["state"] == "UP"
-    )
-
-    down_devices = (
-        len(device_rows)
-        -
-        up_devices
+    (
+        device_total,
+        up_devices,
+        down_devices
+    ) = get_device_counts(
+        device_rows
     )
 
     health = overall_health(
@@ -107,7 +104,7 @@ def status():
                 "up": service_up,
             },
             "devices": {
-                "total": len(device_rows),
+                "total": device_total,
                 "up": up_devices,
                 "down": down_devices,
                 "rows": devices,

@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
 import sqlite3
+
 from engine.analysis.incidents import build_incidents
-from engine.config import get_networks, get_devices
-from datetime import datetime
+from engine.config import (
+    get_networks,
+    get_devices,
+    get_device_monitoring_mode
+)
+
 
 DB = "/var/lib/netmonitor/netmonitor.db"
 
@@ -220,8 +225,59 @@ def get_incidents():
     networks = get_networks()
     devices = get_devices()
 
+    #
+    # Preserve all events in the database.
+    #
+    # Standby devices are only excluded from
+    # incident analysis. Their raw UP/DOWN events
+    # remain available in the event history.
+    #
+
+    standby_devices = set()
+
+    for device in devices:
+
+        if (
+            get_device_monitoring_mode(device)
+            ==
+            "standby"
+        ):
+
+            standby_devices.add(
+                device.get("name")
+            )
+
+    filtered_rows = []
+
+    for row in rows:
+
+        if row["job_type"] != "device":
+
+            filtered_rows.append(
+                row
+            )
+
+            continue
+
+        device_name = row["job_name"]
+
+        if ":" in device_name:
+
+            device_name = device_name.split(
+                ":",
+                1
+            )[1]
+
+        if device_name in standby_devices:
+
+            continue
+
+        filtered_rows.append(
+            row
+        )
+
     return build_incidents(
-        rows,
+        filtered_rows,
         networks,
         devices
     )
@@ -278,6 +334,7 @@ def cleanup_device_status(valid_devices):
 def sync_status(valid_jobs):
 
     conn = sqlite3.connect(DB)
+
     cur = conn.cursor()
 
     cur.execute("""
