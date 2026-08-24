@@ -69,6 +69,16 @@ def network_from_name(
     devices=None
 ):
 
+    networks = networks or []
+    devices = devices or []
+
+
+    #
+    # Device jobs use the network ID as a prefix:
+    #
+    #     2:NAS-STIEL
+    #     3:Fritz!Box PBX
+    #
     if ":" in name:
 
         prefix, device_name = name.split(
@@ -86,48 +96,113 @@ def network_from_name(
 
         if network_id is not None:
 
-            if devices:
+            #
+            # Prefer the configured device network assignment.
+            #
+            for device in devices:
 
-                for device in devices:
+                if device.get("name") == device_name:
 
-                    if (
-                        device["name"]
-                        ==
-                        device_name
-                    ):
+                    network_id = device.get(
+                        "network_id",
+                        network_id
+                    )
 
-                        network_id = device.get(
-                            "network_id",
-                            network_id
-                        )
+                    break
 
-                        break
+            #
+            # Resolve the network ID through the configured
+            # customer networks.
+            #
+            for network in networks:
 
-            if networks:
+                if network.get("id") == network_id:
 
-                for network in networks:
-
-                    if network["id"] == network_id:
-
-                        return network["name"]
+                    return network.get("name")
 
         name = device_name
 
-    if name.startswith("LAN "):
+    #
+    # Resolve gateway jobs from the configured gateway_name.
+    #
+    # This replaces the old hard-coded:
+    #
+    #     OPNSense -> LAN
+    #     DIGIBox  -> WAN
+    #
+    # behavior.
+    #
+    for network in networks:
 
-        return "LAN"
+        gateway_name = network.get(
+            "gateway_name"
+        )
 
-    if name.startswith("WAN "):
+        if (
+            gateway_name
+            and
+            name == gateway_name
+        ):
 
-        return "WAN"
+            return network.get("name")
 
-    if name == "OPNSense":
+    #
+    # Internet and DNS jobs are generated using the
+    # configured network name:
+    #
+    #     LAN Internet
+    #     LAN DNS
+    #     WAN Internet
+    #     WAN DNS
+    #     Primary Internet
+    #     Primary DNS
+    #
+    for network in networks:
 
-        return "LAN"
+        network_name = network.get(
+            "name"
+        )
 
-    if name == "DIGIBox":
+        if not network_name:
 
-        return "WAN"
+            continue
+
+        if name in (
+            f"{network_name} Internet",
+            f"{network_name} DNS"
+        ):
+
+            return network_name
+
+    #
+    # If the job name exactly matches a configured
+    # network name, resolve it directly.
+    #
+    for network in networks:
+
+        if name == network.get("name"):
+
+            return network.get("name")
+
+    #
+    # Preserve the old generic LAN/WAN naming behavior
+    # only when those networks are actually configured.
+    #
+    for network in networks:
+
+        network_name = network.get(
+            "name"
+        )
+
+        if (
+            network_name
+            and
+            name.startswith(
+                f"{network_name} "
+            )
+        ):
+
+            return network_name
 
     return None
 
