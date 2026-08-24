@@ -10,6 +10,27 @@ CONFIG_DIR="/etc/netmonitor"
 DATA_DIR="/var/lib/netmonitor"
 SERVICE_DIR="/etc/systemd/system"
 
+#
+# Determine the user who launched the installer.
+#
+# When started with sudo, SUDO_USER contains the
+# original non-root user. If SUDO_USER is not set,
+# fall back to the owner of the project directory.
+#
+
+if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+
+    INSTALL_USER="$SUDO_USER"
+
+else
+
+    INSTALL_USER="$(stat -c '%U' "$PROJECT_DIR")"
+
+fi
+
+INSTALL_GROUP="$(id -gn "$INSTALL_USER")"
+
+
 print_header()
 {
     echo
@@ -19,6 +40,7 @@ print_header()
     echo
 }
 
+
 require_root()
 {
     if [ "$EUID" -ne 0 ]; then
@@ -26,6 +48,7 @@ require_root()
         exit 1
     fi
 }
+
 
 select_installation_type()
 {
@@ -76,6 +99,7 @@ select_installation_type()
 
     done
 }
+
 
 prepare_installation()
 {
