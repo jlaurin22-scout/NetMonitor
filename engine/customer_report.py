@@ -415,6 +415,31 @@ def service_summary(service_outages):
 
     return summary
 
+def safe_filename(value):
+
+    value = str(value or "").strip()
+
+    if not value:
+        return "Customer"
+
+    invalid = '<>:"/\\|?*'
+
+    value = "".join(
+        "_"
+        if character in invalid
+        else character
+        for character in value
+    )
+
+    value = " ".join(
+        value.split()
+    )
+
+    value = value.strip(
+        " ."
+    )
+
+    return value or "Customer"
 
 def generate_customer_report(
     report,
@@ -458,9 +483,13 @@ def generate_customer_report(
 
             date_part = "unknown"
 
+        customer_filename = safe_filename(
+            customer
+        )
+
         output_path = os.path.join(
             REPORT_DIR,
-            f"Network_Analysis_Report_{date_part}.pdf"
+            f"{customer_filename}_Network_Analysis_Report_{date_part}.pdf"
         )
 
     output_directory = os.path.dirname(
