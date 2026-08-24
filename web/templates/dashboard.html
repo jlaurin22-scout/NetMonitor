@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Scout Network Monitor
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Scout Network Monitor
+        </div>
+
+        <div class="brand-site">
+
+            {{ customer }}
+
+            {% if address %}
+                <span class="separator">—</span>
+                {{ address }}
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="service-indicator">
+
+        <span
+            class="
+                status-dot
+                {% if service_up %}
+                    dot-up
+                {% else %}
+                    dot-down
+                {% endif %}
+            "
+        ></span>
+
+        Monitoring {{ service_state }}
+
+    </div>
+
+</header>
+
+
+<nav class="navigation">
+
+    <a
+        href="/"
+        class="active"
+    >
+        Dashboard
+    </a>
+
+    <a href="#">
+        Devices
+    </a>
+
+    <a href="#">
+        Networks
+    </a>
+
+    <a href="#">
+        Events
+    </a>
+
+    <a href="#">
+        Incidents
+    </a>
+
+    <a href="#">
+        Reports
+    </a>
+
+    <a href="#">
+        Settings
+    </a>
+
+</nav>
+
+
+<main class="dashboard">
+
+
+    <section class="health-panel">
+
+        <div>
+
+            <div class="panel-label">
+                Network Health
+            </div>
+
+            <div
+                class="
+                    health-value
+                    {{ health.class }}
+                "
+            >
+
+                <span class="health-dot"></span>
+
+                {{ health.label }}
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="network-grid">
+
+
+        {% for network in networks %}
+
+        <div class="network-card">
+
+            <div class="network-header">
+
+                <div class="network-name">
+                    {{ network.name }}
+                </div>
+
+                {% if network_is_healthy(network) %}
+                    <span
+                        class="
+                            network-state
+                            state-up
+                        "
+                    >
+                        HEALTHY
+                    </span>
+                {% else %}
+                    <span
+                        class="
+                            network-state
+                            state-warning
+                        "
+                    >
+                        ATTENTION
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="network-checks">
+
+
+                {% if network.gateway %}
+
+                <div class="check-row">
+
+                    <span>
+                        Gateway
+                    </span>
+
+                    <span
+                        class="
+                            check-state
+                            {% if network.gateway.state == 'UP' %}
+                                state-up
+                            {% else %}
+                                state-down
+                            {% endif %}
+                        "
+                    >
+
+                        <span class="status-dot"></span>
+
+                        {{ network.gateway.state }}
+
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if network.internet %}
+
+                <div class="check-row">
+
+                    <span>
+                        Internet
+                    </span>
+
+                    <span
+                        class="
+                            check-state
+                            {% if network.internet.state == 'UP' %}
+                                state-up
+                            {% else %}
+                                state-down
+                            {% endif %}
+                        "
+                    >
+
+                        <span class="status-dot"></span>
+
+                        {{ network.internet.state }}
+
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if network.dns %}
+
+                <div class="check-row">
+
+                    <span>
+                        DNS
+                    </span>
+
+                    <span
+                        class="
+                            check-state
+                            {% if network.dns.state == 'UP' %}
+                                state-up
+                            {% else %}
+                                state-down
+                            {% endif %}
+                        "
+                    >
+
+                        <span class="status-dot"></span>
+
+                        {{ network.dns.state }}
+
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+
+        <div class="network-card device-summary">
+
+            <div class="network-header">
+
+                <div class="network-name">
+                    Devices
+                </div>
+
+                <span
+                    class="
+                        network-state
+                        {% if down_devices == 0 %}
+                            state-up
+                        {% else %}
+                            state-warning
+                        {% endif %}
+                    "
+                >
+                    {{ up_devices }} / {{ device_total }} UP
+                </span>
+
+            </div>
+
+
+            <div class="device-summary-number">
+
+                {{ up_devices }}
+
+                <span>
+                    UP
+                </span>
+
+            </div>
+
+
+            {% if down_devices > 0 %}
+
+            <div class="device-summary-down">
+
+                {{ down_devices }}
+                DOWN
+
+            </div>
+
+            {% else %}
+
+            <div class="device-summary-ok">
+
+                All monitored devices are operational.
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <h2>
+                    Current Incidents
+                </h2>
+
+                <p>
+                    Network problems requiring attention
+                </p>
+
+            </div>
+
+            <a href="#">
+                View all →
+            </a>
+
+        </div>
+
+
+        <div class="empty-state">
+
+            <span class="empty-check">
+                ✓
+            </span>
+
+            <div>
+
+                <strong>
+                    No active incidents
+                </strong>
+
+                <p>
+                    All monitored services and devices
+                    are currently operating normally.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <h2>
+                    Device Status
+                </h2>
+
+                <p>
+                    Current state of monitored devices
+                </p>
+
+            </div>
+
+            <a href="#">
+                View all →
+            </a>
+
+        </div>
+
+
+        <div class="device-list">
+
+
+            {% for device in devices %}
+
+            <div class="device-row">
+
+                <div class="device-name">
+
+                    <span
+                        class="
+                            status-dot
+                            {% if device.state == 'UP' %}
+                                dot-up
+                            {% else %}
+                                dot-down
+                            {% endif %}
+                        "
+                    ></span>
+
+                    {{ device.name }}
+
+                </div>
+
+                <div class="device-type">
+
+                    {{ device.job_type }}
+
+                </div>
+
+                <div
+                    class="
+                        device-state
+                        {% if device.state == 'UP' %}
+                            state-up
+                        {% else %}
+                            state-down
+                        {% endif %}
+                    "
+                >
+
+                    {{ device.state }}
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<footer class="footer">
+
+    Scout Network Monitor
+
+</footer>
+
+
+</body>
+
+</html>
