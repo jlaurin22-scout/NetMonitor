@@ -484,6 +484,112 @@ def update_dns_lookup(lookup):
 
     return lookup
 
+def update_ntfy_settings(
+    enabled,
+    server,
+    topic,
+    token,
+    name
+):
+
+    server = server.strip()
+    topic = topic.strip()
+    token = token.strip()
+    name = name.strip()
+
+    if enabled and not server:
+
+        raise Exception(
+            "NTFY server cannot be empty when notifications are enabled."
+        )
+
+    if enabled and not topic:
+
+        raise Exception(
+            "NTFY topic cannot be empty when notifications are enabled."
+        )
+
+    if not name:
+
+        name = "Scout"
+
+    data = load_settings()
+
+    data["ntfy"] = {
+        "enabled": enabled,
+        "server": server,
+        "topic": topic,
+        "token": token,
+        "name": name
+    }
+
+    save_settings(data)
+
+    return data["ntfy"]
+
+
+def get_ntfy_settings():
+
+    data = load_settings()
+
+    return data.get(
+        "ntfy",
+        {
+            "enabled": False,
+            "server": "https://ntfy.sh",
+            "topic": "",
+            "token": "",
+            "name": ""
+        }
+    )
+
+
+def test_ntfy(
+    server,
+    topic,
+    token,
+    name
+):
+
+    from engine.notify import send_ntfy
+
+    server = server.strip()
+    topic = topic.strip()
+    token = token.strip()
+    name = name.strip()
+
+    if not server:
+
+        raise Exception(
+            "NTFY server cannot be empty."
+        )
+
+    if not topic:
+
+        raise Exception(
+            "NTFY topic cannot be empty."
+        )
+
+    if not name:
+
+        name = "Scout"
+
+    success = send_ntfy(
+        server,
+        topic,
+        token,
+        name,
+        "NetMonitor NTFY test notification"
+    )
+
+    if not success:
+
+        raise Exception(
+            "NTFY test notification failed."
+        )
+
+    return True
+
 def get_internet_targets():
 
     data = load_settings()

@@ -713,6 +713,151 @@ def save_dns():
             )
         )
 
+@configuration.route("/notifications")
+def notifications():
+
+    return _render_configuration(
+        "notifications"
+    )
+
+
+@configuration.route(
+    "/notifications/save",
+    methods=["POST"]
+)
+@admin_required
+def save_notifications():
+
+    try:
+
+        enabled = (
+            request.form.get(
+                "enabled"
+            )
+            == "on"
+        )
+
+        server = request.form.get(
+            "server",
+            ""
+        ).strip()
+
+        topic = request.form.get(
+            "topic",
+            ""
+        ).strip()
+
+        token = request.form.get(
+            "token",
+            ""
+        ).strip()
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        config.update_ntfy_settings(
+            enabled,
+            server,
+            topic,
+            token,
+            name
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Notification settings updated successfully."
+            if restarted
+            else
+            "Notification settings saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.notifications",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.notifications",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/notifications/test",
+    methods=["POST"]
+)
+@admin_required
+def test_notifications():
+
+    try:
+
+        enabled = (
+            request.form.get(
+                "enabled"
+            )
+            == "on"
+        )
+
+        server = request.form.get(
+            "server",
+            ""
+        ).strip()
+
+        topic = request.form.get(
+            "topic",
+            ""
+        ).strip()
+
+        token = request.form.get(
+            "token",
+            ""
+        ).strip()
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        config.update_ntfy_settings(
+            enabled,
+            server,
+            topic,
+            token,
+            name
+        )
+
+        config.test_ntfy(
+            server,
+            topic,
+            token,
+            name
+        )
+
+        return redirect(
+            url_for(
+                "configuration.notifications",
+                message="Test notification sent successfully."
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.notifications",
+                error=str(e)
+            )
+        )
+
 @configuration.route("/internet")
 def internet():
 

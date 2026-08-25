@@ -1,3 +1,5 @@
+watchdog@Watchdog:~/NetMonitor$ cd ~/NetMonitor
+cat web/templates/configuration.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,10 +141,11 @@
                 <small>Open configuration →</small>
             </a>
 
-            <a class="configuration-card" href="#">
+            <a class="configuration-card {% if page == 'notifications' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.notifications') }}">
                 <strong>Notifications</strong>
                 <span>NTFY notification configuration</span>
-                <small>Coming next</small>
+                <small>Open configuration →</small>
             </a>
 
         </div>
@@ -836,6 +839,195 @@
                 NetMonitor queries this hostname through the DNS
                 servers configured for each monitored network.
             </small>
+
+        </label>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endif %}
+
+{% if page == 'notifications' %}
+
+<section class="card configuration-section">
+
+    <div class="section-heading">
+
+        <div>
+            <h2>Notifications</h2>
+            <p>Configure NTFY notifications for NetMonitor</p>
+        </div>
+
+    </div>
+
+    {% if request.args.get('message') %}
+
+    <div class="alert alert-success">
+        {{ request.args.get('message') }}
+    </div>
+
+    {% endif %}
+
+    {% if request.args.get('error') %}
+
+    <div class="alert alert-error">
+        {{ request.args.get('error') }}
+    </div>
+
+    {% endif %}
+
+    {% set ntfy = settings.get('ntfy', {}) %}
+
+    {% if current_user.role == 'admin' %}
+
+    <form method="post"
+          action="{{ url_for('configuration.save_notifications') }}">
+
+        <div class="form-checks">
+
+            <label>
+                <input type="checkbox"
+                       name="enabled"
+                       {% if ntfy.get('enabled', False) %}checked{% endif %}>
+                Enable NTFY notifications
+            </label>
+
+        </div>
+
+        <div class="form-grid">
+
+            <label>
+                NTFY Server
+
+                <input name="server"
+                       type="text"
+                       value="{{ ntfy.get('server', 'https://ntfy.sh') }}"
+                       placeholder="https://ntfy.sh"
+                       required>
+
+                <small>
+                    The NTFY server used to send notifications.
+                </small>
+
+            </label>
+
+            <label>
+                Topic
+
+                <input name="topic"
+                       type="text"
+                       value="{{ ntfy.get('topic', '') }}"
+                       placeholder="your-topic"
+                       required>
+
+                <small>
+                    The NTFY topic where notifications will be sent.
+                </small>
+
+            </label>
+
+            <label>
+                Access Token
+
+                <input name="token"
+                       type="password"
+                       value="{{ ntfy.get('token', '') }}"
+                       placeholder="Optional">
+
+                <small>
+                    Optional NTFY access token.
+                </small>
+
+            </label>
+
+            <label>
+                Notification Name
+
+                <input name="name"
+                       type="text"
+                       value="{{ ntfy.get('name', '') }}"
+                       placeholder="Watchdog"
+                       required>
+
+                <small>
+                    Name displayed as the notification title.
+                </small>
+
+            </label>
+
+        </div>
+
+        <div class="modal-actions">
+
+            <button class="button"
+                    type="button"
+                    onclick="window.location.href='{{ url_for('configuration.index') }}'">
+                Cancel
+            </button>
+
+            <button class="button"
+                    type="submit"
+                    formaction="{{ url_for('configuration.test_notifications') }}">
+                Send Test Notification
+            </button>
+
+            <button class="button button-primary"
+                    type="submit">
+                Save Changes
+            </button>
+
+        </div>
+
+    </form>
+
+    {% else %}
+
+    <div class="form-checks">
+
+        <label>
+            <input type="checkbox"
+                   {% if ntfy.get('enabled', False) %}checked{% endif %}
+                   disabled>
+            Enable NTFY notifications
+        </label>
+
+    </div>
+
+    <div class="form-grid">
+
+        <label>
+            NTFY Server
+
+            <input value="{{ ntfy.get('server', 'https://ntfy.sh') }}"
+                   disabled>
+
+        </label>
+
+        <label>
+            Topic
+
+            <input value="{{ ntfy.get('topic', '') }}"
+                   disabled>
+
+        </label>
+
+        <label>
+            Access Token
+
+            <input type="password"
+                   value="••••••••"
+                   disabled>
+
+        </label>
+
+        <label>
+            Notification Name
+
+            <input value="{{ ntfy.get('name', '') }}"
+                   disabled>
 
         </label>
 
@@ -1973,4 +2165,3 @@ document.addEventListener(
 </script>
 
 </body>
-</html>
