@@ -51,9 +51,7 @@ def _restart_netmonitor():
         [
             "/usr/bin/sudo",
             "-n",
-            "/usr/bin/systemctl",
-            "restart",
-            "netmonitor"
+            "/usr/local/sbin/netmonitor-web-restart"
         ],
         capture_output=True,
         text=True
