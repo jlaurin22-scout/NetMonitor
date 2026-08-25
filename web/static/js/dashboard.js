@@ -337,6 +337,14 @@ function updateDevices(data) {
         of data.devices.rows
     ) {
 
+        const isStandby =
+            device.monitoring_mode === "standby";
+
+        const displayState =
+            isStandby
+                ? "STANDBY"
+                : device.state;
+
         const row =
             document.createElement(
                 "div"
@@ -361,9 +369,11 @@ function updateDevices(data) {
         dot.className =
             "status-dot " +
             (
-                device.state === "UP"
+                isStandby
                     ? "dot-up"
-                    : "dot-down"
+                    : device.state === "UP"
+                        ? "dot-up"
+                        : "dot-down"
             );
 
         name.appendChild(
@@ -395,13 +405,15 @@ function updateDevices(data) {
         state.className =
             "device-state " +
             (
-                device.state === "UP"
-                    ? "state-up"
-                    : "state-down"
+                isStandby
+                    ? "state-warning"
+                    : device.state === "UP"
+                        ? "state-up"
+                        : "state-down"
             );
 
         state.textContent =
-            device.state;
+            displayState;
 
         row.appendChild(
             name

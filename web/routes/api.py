@@ -2,6 +2,8 @@
 
 from flask import Blueprint, jsonify
 
+from engine import config
+
 from web.routes.dashboard import (
     build_network_status,
     build_status_rows,
@@ -87,6 +89,15 @@ def status():
 
     devices = []
 
+    configured_devices = config.get_devices()
+
+    device_modes = {
+        device.get("name"): config.get_device_monitoring_mode(
+            device
+        )
+        for device in configured_devices
+    }
+
     for row in device_rows:
 
         devices.append(
@@ -94,6 +105,10 @@ def status():
                 "name": row["name"],
                 "state": row["state"],
                 "job_type": row["job_type"],
+                "monitoring_mode": device_modes.get(
+                    row["name"],
+                    "normal"
+                ),
             }
         )
 
