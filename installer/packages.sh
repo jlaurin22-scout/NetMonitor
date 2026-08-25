@@ -16,6 +16,7 @@ install_packages()
         python3-reportlab \
         python3-flask \
         gunicorn \
+        speedtest-cli \
         ieee-data \
         samba-common-bin \
         avahi-utils \
