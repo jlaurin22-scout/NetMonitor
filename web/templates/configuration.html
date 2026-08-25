@@ -5,6 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Network Monitor — Configuration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .speedtest-running {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 14px 16px;
+            border: 1px solid #b7dfc4;
+            border-radius: 6px;
+            background: #f1fbf4;
+            color: #176b35;
+        }
+
+        .speedtest-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #b7dfc4;
+            border-top-color: #198754;
+            border-radius: 50%;
+            animation: speedtest-spin 0.9s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .speedtest-running strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .speedtest-running span {
+            display: block;
+        }
+
+        .speedtest-button-running {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        @keyframes speedtest-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
 <header class="topbar">
@@ -18,6 +62,7 @@
             {% endif %}
         </div>
     </div>
+
     <div class="account-area">
         <span class="account-user">{{ current_user.username }}</span>
         <span class="account-role">{{ current_user.role|upper }}</span>
@@ -80,10 +125,11 @@
                 <small>Open configuration →</small>
             </a>
 
-            <a class="configuration-card" href="#">
+            <a class="configuration-card {% if page == 'internet' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.internet') }}">
                 <strong>Internet Check</strong>
-                <span>Internet connectivity targets</span>
-                <small>Coming next</small>
+                <span>Internet connectivity targets and speed testing</span>
+                <small>Open configuration →</small>
             </a>
 
             <a class="configuration-card" href="#">
@@ -148,6 +194,7 @@
             </div>
 
             <div class="modal-actions">
+
                 <button class="button"
                         type="button"
                         onclick="window.location.href='{{ url_for('configuration.index') }}'">
@@ -158,6 +205,7 @@
                         type="submit">
                     Save Changes
                 </button>
+
             </div>
 
         </form>
@@ -190,36 +238,45 @@
     <section class="card configuration-section">
 
         <div class="section-heading">
+
             <div>
                 <h2>Networks</h2>
                 <p>Configure monitored network interfaces, gateways and DNS servers</p>
             </div>
 
             {% if current_user.role == 'admin' %}
+
             <button class="button button-primary"
                     type="button"
                     data-open-modal="add-network-modal">
                 + Add Network
             </button>
+
             {% endif %}
+
         </div>
 
         {% if request.args.get('message') %}
+
         <div class="alert alert-success">
             {{ request.args.get('message') }}
         </div>
+
         {% endif %}
 
         {% if request.args.get('error') %}
+
         <div class="alert alert-error">
             {{ request.args.get('error') }}
         </div>
+
         {% endif %}
 
         {% if not networks %}
 
         <div class="empty-state">
             <span class="empty-check">✓</span>
+
             <div>
                 <strong>No networks configured</strong>
                 <p>Add a network to begin monitoring it.</p>
@@ -348,25 +405,32 @@
         </div>
 
         {% if request.args.get('message') %}
+
         <div class="alert alert-success">
             {{ request.args.get('message') }}
         </div>
+
         {% endif %}
 
         {% if request.args.get('error') %}
+
         <div class="alert alert-error">
             {{ request.args.get('error') }}
         </div>
+
         {% endif %}
 
         {% if not devices %}
 
         <div class="empty-state">
+
             <span class="empty-check">✓</span>
+
             <div>
                 <strong>No monitored devices configured</strong>
                 <p>Add the first device to begin monitoring it.</p>
             </div>
+
         </div>
 
         {% else %}
@@ -402,6 +466,7 @@
                 <table class="configuration-table">
 
                     <thead>
+
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
@@ -411,6 +476,7 @@
                             <th>Status</th>
                             <th></th>
                         </tr>
+
                     </thead>
 
                     <tbody>
@@ -434,6 +500,7 @@
                             </td>
 
                             <td>
+
                                 <span class="check-badge {% if device.ping %}check-enabled{% endif %}">
                                     PING
                                 </span>
@@ -441,12 +508,15 @@
                                 <span class="check-badge {% if device.snmp %}check-enabled{% endif %}">
                                     SNMP
                                 </span>
+
                             </td>
 
                             <td>
+
                                 <span class="status-badge {% if device.state == 'UP' or device.state == 'STANDBY' %}status-badge-up{% elif device.state == 'DOWN' %}status-badge-down{% else %}status-badge-unknown{% endif %}">
                                     {{ device.state }}
                                 </span>
+
                             </td>
 
                             <td class="table-actions">
@@ -523,15 +593,19 @@
         </div>
 
         {% if request.args.get('message') %}
+
         <div class="alert alert-success">
             {{ request.args.get('message') }}
         </div>
+
         {% endif %}
 
         {% if request.args.get('error') %}
+
         <div class="alert alert-error">
             {{ request.args.get('error') }}
         </div>
+
         {% endif %}
 
         {% set monitor = settings.get('monitor', {}) %}
@@ -545,42 +619,62 @@
 
                 <label>
                     Gateway Check Interval
+
                     <input name="gateway_interval"
                            type="number"
                            min="1"
                            value="{{ monitor.get('gateway_interval', 30) }}"
                            required>
-                    <small>Seconds between gateway checks.</small>
+
+                    <small>
+                        Seconds between gateway checks.
+                    </small>
+
                 </label>
 
                 <label>
                     Internet Check Interval
+
                     <input name="internet_interval"
                            type="number"
                            min="1"
                            value="{{ monitor.get('internet_interval', 30) }}"
                            required>
-                    <small>Seconds between internet checks.</small>
+
+                    <small>
+                        Seconds between internet checks.
+                    </small>
+
                 </label>
 
                 <label>
                     DNS Check Interval
+
                     <input name="dns_interval"
                            type="number"
                            min="1"
                            value="{{ monitor.get('dns_interval', 30) }}"
                            required>
-                    <small>Seconds between DNS checks.</small>
+
+                    <small>
+                        Seconds between DNS checks.
+                    </small>
+
                 </label>
 
                 <label>
                     Device Check Interval
+
                     <input name="device_interval"
                            type="number"
                            min="1"
                            value="{{ monitor.get('device_interval', 60) }}"
                            required>
-                    <small>Seconds between device checks.</small>
+
+                    <small>
+                        Seconds between device checks.
+                    </small>
+
                 </label>
 
             </div>
@@ -610,29 +704,375 @@
                 Gateway Check Interval
                 <input value="{{ monitor.get('gateway_interval', 30) }}"
                        disabled>
-                <small>Seconds between gateway checks.</small>
+
+                <small>
+                    Seconds between gateway checks.
+                </small>
             </label>
 
             <label>
                 Internet Check Interval
                 <input value="{{ monitor.get('internet_interval', 30) }}"
                        disabled>
-                <small>Seconds between internet checks.</small>
+
+                <small>
+                    Seconds between internet checks.
+                </small>
             </label>
 
             <label>
                 DNS Check Interval
                 <input value="{{ monitor.get('dns_interval', 30) }}"
                        disabled>
-                <small>Seconds between DNS checks.</small>
+
+                <small>
+                    Seconds between DNS checks.
+                </small>
             </label>
 
             <label>
                 Device Check Interval
                 <input value="{{ monitor.get('device_interval', 60) }}"
                        disabled>
-                <small>Seconds between device checks.</small>
+
+                <small>
+                    Seconds between device checks.
+                </small>
             </label>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+    {% endif %}
+
+
+    {% if page == 'internet' %}
+
+    <section class="card configuration-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Internet Check</h2>
+                <p>Configure Internet connectivity targets</p>
+            </div>
+
+            {% if current_user.role == 'admin' %}
+
+            <button class="button button-primary"
+                    type="button"
+                    data-open-modal="add-internet-target-modal">
+                + Add Target
+            </button>
+
+            {% endif %}
+
+        </div>
+
+        {% if request.args.get('message') %}
+
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
+
+        {% endif %}
+
+        {% if request.args.get('error') %}
+
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
+
+        {% endif %}
+
+        <div class="section-heading configuration-subsection-heading">
+
+            <div>
+
+                <h3>Connectivity Targets</h3>
+
+                <p>
+                    NetMonitor considers the Internet available when at least
+                    one configured target responds.
+                </p>
+
+            </div>
+
+        </div>
+
+        {% if internet_targets %}
+
+        <div class="configuration-table-wrap">
+
+            <table class="configuration-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Target</th>
+                        <th>Purpose</th>
+                        <th></th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for target in internet_targets %}
+
+                    <tr>
+
+                        <td class="table-name">
+                            {{ target }}
+                        </td>
+
+                        <td>
+                            Internet connectivity check
+                        </td>
+
+                        <td class="table-actions">
+
+                            {% if current_user.role == 'admin' %}
+
+                            <form method="post"
+                                  action="{{ url_for('configuration.remove_internet_target', ip=target) }}"
+                                  onsubmit="return confirm('Remove {{ target | e }} from the Internet check targets?');">
+
+                                <button class="button button-small button-danger"
+                                        type="submit">
+                                    Remove
+                                </button>
+
+                            </form>
+
+                            {% else %}
+
+                            <span class="viewer-label">
+                                View only
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <span class="empty-check">!</span>
+
+            <div>
+                <strong>No Internet targets configured</strong>
+                <p>
+                    Add at least one target to monitor Internet connectivity.
+                </p>
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <section class="card configuration-section">
+
+        <div class="section-heading">
+
+            <div>
+
+                <h2>Internet Speed Test</h2>
+
+                <p>
+                    Run a manual Internet bandwidth test.
+                    The test may take 1–2 minutes to complete.
+                </p>
+
+            </div>
+
+        </div>
+
+        {% if speedtest %}
+
+        <div class="section-heading configuration-subsection-heading">
+
+            <div>
+
+                <h3>Latest Test Result</h3>
+
+                <p>
+                    Results from the most recent manual speed test.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="configuration-table-wrap">
+
+            <table class="configuration-table">
+
+                <tbody>
+
+                    <tr>
+                        <td class="table-name">
+                            Download
+                        </td>
+
+                        <td>
+                            {{ speedtest.download }} Mbit/s
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="table-name">
+                            Upload
+                        </td>
+
+                        <td>
+                            {{ speedtest.upload }} Mbit/s
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="table-name">
+                            Latency
+                        </td>
+
+                        <td>
+                            {{ speedtest.ping }} ms
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="table-name">
+                            Server
+                        </td>
+
+                        <td>
+                            {{ speedtest.server }}
+
+                            {% if speedtest.country %}
+                                — {{ speedtest.country }}
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="table-name">
+                            Provider
+                        </td>
+
+                        <td>
+                            {{ speedtest.sponsor }}
+                        </td>
+                    </tr>
+
+                    {% if speedtest.timestamp %}
+
+                    <tr>
+                        <td class="table-name">
+                            Test Time
+                        </td>
+
+                        <td>
+                            {{ speedtest.timestamp }}
+                        </td>
+                    </tr>
+
+                    {% endif %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% endif %}
+
+
+        <div class="empty-state">
+
+            <span class="empty-check">↯</span>
+
+            <div>
+
+                <strong>
+                    Speed Test
+                </strong>
+
+                <p>
+                    Run an on-demand download, upload and latency test.
+                    This can take 1–2 minutes.
+                    Please be patient while the test is running.
+                    The speed test does not affect normal Internet monitoring.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% if current_user.role == 'admin' %}
+
+        <form method="post"
+              id="speed-test-form"
+              action="{{ url_for('configuration.internet_speedtest') }}">
+
+            <div id="speed-test-running"
+                 class="speedtest-running"
+                 style="display: none;">
+
+                <div class="speedtest-spinner"></div>
+
+                <div>
+
+                    <strong>
+                        Speed test is running…
+                    </strong>
+
+                    <span>
+                        This can take 1–2 minutes. Please wait for the results.
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="button button-primary"
+                        id="speed-test-button"
+                        type="submit">
+
+                    Run Speed Test
+
+                </button>
+
+            </div>
+
+        </form>
+
+        {% else %}
+
+        <div class="modal-actions">
+
+            <span class="viewer-label">
+                Administrator access required to run a speed test.
+            </span>
 
         </div>
 
@@ -677,17 +1117,20 @@
 
                 <label>
                     Network Name
-                    <input name="name" required>
+                    <input name="name"
+                           required>
                 </label>
 
                 <label>
                     Interface
-                    <input name="interface" required>
+                    <input name="interface"
+                           required>
                 </label>
 
                 <label>
                     IP Address
-                    <input name="ip" required>
+                    <input name="ip"
+                           required>
                 </label>
 
                 <label>
@@ -701,12 +1144,14 @@
 
                 <label>
                     Gateway
-                    <input name="gateway" required>
+                    <input name="gateway"
+                           required>
                 </label>
 
                 <label>
                     Router / Firewall
-                    <input name="gateway_name" required>
+                    <input name="gateway_name"
+                           required>
                 </label>
 
                 <label>
@@ -856,6 +1301,68 @@
 
 
 <div class="modal"
+     id="add-internet-target-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="add-internet-target-modal">
+    </div>
+
+    <div class="modal-panel">
+
+        <div class="modal-heading">
+
+            <div>
+                <h2>Add Internet Target</h2>
+                <p>Add an IP address used to verify Internet connectivity</p>
+            </div>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="add-internet-target-modal">
+                ×
+            </button>
+
+        </div>
+
+        <form method="post"
+              action="{{ url_for('configuration.add_internet_target') }}">
+
+            <div class="form-grid">
+
+                <label>
+                    IP Address
+                    <input name="ip"
+                           type="text"
+                           placeholder="1.1.1.1"
+                           required>
+                </label>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="add-internet-target-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Add Target
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="modal"
      id="add-device-modal"
      aria-hidden="true">
 
@@ -887,31 +1394,48 @@
 
                 <label>
                     Device Name
-                    <input name="name" required>
+                    <input name="name"
+                           required>
                 </label>
 
                 <label>
                     IP Address
-                    <input name="ip" required>
+                    <input name="ip"
+                           required>
                 </label>
 
                 <label>
                     Network
-                    <select name="network_id" required>
+                    <select name="network_id"
+                            required>
+
                         {% for network in networks %}
+
                         <option value="{{ network.id }}">
                             {{ network.name }} — {{ network.interface }}
                         </option>
+
                         {% endfor %}
+
                     </select>
                 </label>
 
                 <label>
                     Monitoring Mode
                     <select name="monitoring_mode">
-                        <option value="normal">Normal</option>
-                        <option value="standby">Standby</option>
-                        <option value="conditional">Conditional</option>
+
+                        <option value="normal">
+                            Normal
+                        </option>
+
+                        <option value="standby">
+                            Standby
+                        </option>
+
+                        <option value="conditional">
+                            Conditional
+                        </option>
+
                     </select>
                 </label>
 
@@ -1006,11 +1530,15 @@
                     <select name="network_id"
                             id="edit-network"
                             required>
+
                         {% for network in networks %}
+
                         <option value="{{ network.id }}">
                             {{ network.name }} — {{ network.interface }}
                         </option>
+
                         {% endfor %}
+
                     </select>
                 </label>
 
@@ -1018,9 +1546,19 @@
                     Monitoring Mode
                     <select name="monitoring_mode"
                             id="edit-mode">
-                        <option value="normal">Normal</option>
-                        <option value="standby">Standby</option>
-                        <option value="conditional">Conditional</option>
+
+                        <option value="normal">
+                            Normal
+                        </option>
+
+                        <option value="standby">
+                            Standby
+                        </option>
+
+                        <option value="conditional">
+                            Conditional
+                        </option>
+
                     </select>
                 </label>
 
@@ -1077,7 +1615,9 @@ document.querySelectorAll('[data-open-modal]').forEach(function (button) {
                 button.dataset.openModal
             );
 
-        modal.classList.add('modal-open');
+        modal.classList.add(
+            'modal-open'
+        );
 
         modal.setAttribute(
             'aria-hidden',
@@ -1256,6 +1796,53 @@ document.querySelectorAll('[data-edit-device]').forEach(function (button) {
     });
 
 });
+
+
+const speedTestForm =
+    document.getElementById(
+        'speed-test-form'
+    );
+
+if (speedTestForm) {
+
+    speedTestForm.addEventListener(
+        'submit',
+        function () {
+
+            const button =
+                document.getElementById(
+                    'speed-test-button'
+                );
+
+            const running =
+                document.getElementById(
+                    'speed-test-running'
+                );
+
+            if (button) {
+
+                button.disabled = true;
+
+                button.textContent =
+                    'Running Speed Test…';
+
+                button.classList.add(
+                    'speedtest-button-running'
+                );
+
+            }
+
+            if (running) {
+
+                running.style.display =
+                    'flex';
+
+            }
+
+        }
+    );
+
+}
 
 
 document.addEventListener(
