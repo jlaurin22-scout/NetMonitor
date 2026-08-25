@@ -461,6 +461,28 @@ def update_monitoring_intervals(
 
     save_settings(data)
 
+def update_dns_lookup(lookup):
+
+    lookup = lookup.strip()
+
+    if not lookup:
+
+        raise Exception(
+            "DNS lookup hostname cannot be empty."
+        )
+
+    data = load_settings()
+
+    dns = data.setdefault(
+        "dns",
+        {}
+    )
+
+    dns["lookup"] = lookup
+
+    save_settings(data)
+
+    return lookup
 
 def get_internet_targets():
 

@@ -132,10 +132,11 @@
                 <small>Open configuration →</small>
             </a>
 
-            <a class="configuration-card" href="#">
+            <a class="configuration-card {% if page == 'dns' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.dns') }}">
                 <strong>DNS Check</strong>
-                <span>DNS server and lookup configuration</span>
-                <small>Coming next</small>
+                <span>DNS lookup configuration and testing</span>
+                <small>Open configuration →</small>
             </a>
 
             <a class="configuration-card" href="#">
@@ -748,7 +749,103 @@
 
     {% endif %}
 
+{% if page == 'dns' %}
 
+<section class="card configuration-section">
+
+    <div class="section-heading">
+
+        <div>
+            <h2>DNS Check</h2>
+            <p>Configure the hostname used to verify DNS resolution</p>
+        </div>
+
+    </div>
+
+    {% if request.args.get('message') %}
+
+    <div class="alert alert-success">
+        {{ request.args.get('message') }}
+    </div>
+
+    {% endif %}
+
+    {% if request.args.get('error') %}
+
+    <div class="alert alert-error">
+        {{ request.args.get('error') }}
+    </div>
+
+    {% endif %}
+
+    {% set dns = settings.get('dns', {}) %}
+
+    {% if current_user.role == 'admin' %}
+
+    <form method="post"
+          action="{{ url_for('configuration.save_dns') }}">
+
+        <div class="form-grid">
+
+            <label>
+                Lookup Hostname
+
+                <input name="lookup"
+                       type="text"
+                       value="{{ dns.get('lookup', 'google.com') }}"
+                       placeholder="google.com"
+                       required>
+
+                <small>
+                    NetMonitor queries this hostname through the DNS
+                    servers configured for each monitored network.
+                </small>
+
+            </label>
+
+        </div>
+
+        <div class="modal-actions">
+
+            <button class="button"
+                    type="button"
+                    onclick="window.location.href='{{ url_for('configuration.index') }}'">
+                Cancel
+            </button>
+
+            <button class="button button-primary"
+                    type="submit">
+                Save Changes
+            </button>
+
+        </div>
+
+    </form>
+
+    {% else %}
+
+    <div class="form-grid">
+
+        <label>
+            Lookup Hostname
+
+            <input value="{{ dns.get('lookup', 'google.com') }}"
+                   disabled>
+
+            <small>
+                NetMonitor queries this hostname through the DNS
+                servers configured for each monitored network.
+            </small>
+
+        </label>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endif %}
     {% if page == 'internet' %}
 
     <section class="card configuration-section">

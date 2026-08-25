@@ -662,6 +662,56 @@ def save_monitoring():
             )
         )
 
+@configuration.route("/dns")
+def dns():
+
+    return _render_configuration(
+        "dns"
+    )
+
+
+@configuration.route(
+    "/dns/save",
+    methods=["POST"]
+)
+@admin_required
+def save_dns():
+
+    try:
+
+        lookup = request.form.get(
+            "lookup",
+            ""
+        ).strip()
+
+        config.update_dns_lookup(
+            lookup
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "DNS settings updated successfully."
+            if restarted
+            else
+            "DNS settings saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.dns",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.dns",
+                error=str(e)
+            )
+        )
 
 @configuration.route("/internet")
 def internet():
