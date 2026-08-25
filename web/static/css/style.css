@@ -258,9 +258,41 @@ body {
 }
 
 
-.network-grid:has(
-    .network-card:nth-child(4)
-) .device-summary {
+.network-grid.network-count-1 {
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+}
+
+
+.network-grid.network-count-2 {
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+}
+
+
+.network-grid.network-count-3,
+.network-grid.network-count-4,
+.network-grid.network-count-5 {
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+}
+
+
+.network-grid.network-count-3 .device-summary,
+.network-grid.network-count-4 .device-summary,
+.network-grid.network-count-5 .device-summary {
 
     grid-column:
         1 / -1;
