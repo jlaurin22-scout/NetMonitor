@@ -31,6 +31,10 @@ EOF
 
     setfacl \
         -m u:$WEB_USER:--x \
+        "/home/$INSTALL_USER"
+
+    setfacl \
+        -m u:$WEB_USER:--x \
         "$PROJECT_DIR"
 
     setfacl \
