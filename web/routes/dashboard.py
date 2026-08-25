@@ -81,22 +81,7 @@ def build_status_rows():
 
 def build_network_status(rows):
 
-    networks = {
-        "LAN": {
-            "name": "LAN",
-            "gateway": None,
-            "internet": None,
-            "dns": None,
-            "devices": [],
-        },
-        "WAN": {
-            "name": "WAN",
-            "gateway": None,
-            "internet": None,
-            "dns": None,
-            "devices": [],
-        },
-    }
+    networks = {}
 
     configured_networks = config.get_networks()
     configured_devices = config.get_devices()
@@ -108,15 +93,13 @@ def build_network_status(rows):
             f"Network {network.get('id', '')}"
         )
 
-        if name not in networks:
-
-            networks[name] = {
-                "name": name,
-                "gateway": None,
-                "internet": None,
-                "dns": None,
-                "devices": [],
-            }
+        networks[name] = {
+            "name": name,
+            "gateway": None,
+            "internet": None,
+            "dns": None,
+            "devices": [],
+        }
 
     for row in rows:
 
@@ -138,6 +121,10 @@ def build_network_status(rows):
             elif job_name.startswith("WAN "):
 
                 network_name = "WAN"
+
+        if network_name is None:
+
+            continue
 
         if network_name not in networks:
 
@@ -275,14 +262,25 @@ def get_device_counts(device_rows):
 
     standby_devices = get_standby_devices()
 
-    total_devices = len(
-        device_rows
-    )
+    monitored_devices = [
+        row
+        for row in device_rows
+        if not is_standby_device(
+            row,
+            standby_devices
+        )
+    ]
 
     up_devices = sum(
         1
-        for row in device_rows
+        for row in monitored_devices
         if row["state"] == "UP"
+    )
+
+    down_devices = sum(
+        1
+        for row in monitored_devices
+        if row["state"] != "UP"
     )
 
     standby_count = sum(
@@ -294,21 +292,8 @@ def get_device_counts(device_rows):
         )
     )
 
-    down_devices = sum(
-        1
-        for row in device_rows
-        if (
-            row["state"] != "UP"
-            and
-            not is_standby_device(
-                row,
-                standby_devices
-            )
-        )
-    )
-
     return (
-        total_devices,
+        len(device_rows),
         up_devices,
         down_devices,
         standby_count

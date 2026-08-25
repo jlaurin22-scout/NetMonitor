@@ -258,6 +258,14 @@ body {
 }
 
 
+.network-grid:has(
+    .network-card:nth-child(4)
+) .device-summary {
+
+    grid-column:
+        1 / -1;
+}
+
 .network-card {
 
     background: white;
