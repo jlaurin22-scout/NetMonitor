@@ -6,20 +6,12 @@ import ui
 
 from engine import config
 
-from .common import add_monitored_device
 
+def select_network(networks):
 
-def device_add():
+    if len(networks) == 1:
 
-    ui.banner("Add Monitored Device")
-
-    networks = config.get_networks()
-
-    if not networks:
-
-        ui.error("No networks configured.")
-        print()
-        return True
+        return networks[0]["id"]
 
     print(
         f"{'ID':<4}"
@@ -49,7 +41,7 @@ def device_add():
 
     if selection == "c":
 
-        return False
+        return None
 
     try:
 
@@ -57,24 +49,117 @@ def device_add():
 
     except ValueError:
 
-        print()
-        ui.error("Invalid network ID.")
-        print()
-        return True
+        raise ValueError(
+            "Invalid network ID."
+        )
 
     if not any(
         network["id"] == network_id
         for network in networks
     ):
 
+        raise ValueError(
+            "Network not found."
+        )
+
+    return network_id
+
+
+def select_monitoring_mode():
+
+    print()
+
+    print("Monitoring Mode:")
+    print()
+
+    print("N) Normal")
+    print("S) Standby")
+    print("C) Conditional")
+
+    print()
+
+    selection = input(
+        "Monitoring Mode [N]: "
+    ).strip().lower()
+
+    if selection == "":
+
+        return "normal"
+
+    modes = {
+        "n": "normal",
+        "s": "standby",
+        "c": "conditional",
+    }
+
+    if selection not in modes:
+
+        raise ValueError(
+            "Invalid monitoring mode."
+        )
+
+    return modes[selection]
+
+
+def get_network_name(
+    networks,
+    network_id
+):
+
+    for network in networks:
+
+        if network["id"] == network_id:
+
+            return network["name"]
+
+    return f"Network {network_id}"
+
+
+def device_add():
+
+    ui.banner("Add Monitored Device")
+
+    networks = config.get_networks()
+
+    if not networks:
+
+        ui.error(
+            "No networks configured."
+        )
+
         print()
-        ui.error("Network not found.")
-        print()
+
         return True
 
     print()
 
-    name = input("Device Name : ").strip()
+    try:
+
+        network_id = select_network(
+            networks
+        )
+
+    except ValueError as e:
+
+        print()
+
+        ui.error(
+            str(e)
+        )
+
+        print()
+
+        return True
+
+    if network_id is None:
+
+        return False
+
+    print()
+
+    name = input(
+        "Device Name : "
+    ).strip()
 
     if name.lower() == "c":
 
@@ -82,11 +167,17 @@ def device_add():
 
     if name == "":
 
-        ui.error("Device Name cannot be empty.")
+        ui.error(
+            "Device Name cannot be empty."
+        )
+
         print()
+
         return True
 
-    ip = input("IP Address  : ").strip()
+    ip = input(
+        "IP Address  : "
+    ).strip()
 
     if ip.lower() == "c":
 
@@ -94,8 +185,12 @@ def device_add():
 
     if ip == "":
 
-        ui.error("IP Address cannot be empty.")
+        ui.error(
+            "IP Address cannot be empty."
+        )
+
         print()
+
         return True
 
     print()
@@ -120,6 +215,61 @@ def device_add():
 
     snmp = snmp_input.startswith("y")
 
+    try:
+
+        monitoring_mode = (
+            select_monitoring_mode()
+        )
+
+    except ValueError as e:
+
+        print()
+
+        ui.error(
+            str(e)
+        )
+
+        print()
+
+        return True
+
+    network_name = get_network_name(
+        networks,
+        network_id
+    )
+
+    print()
+
+    print("New Device:")
+    print()
+
+    print(
+        f"  Name:          {name}"
+    )
+
+    print(
+        f"  IP Address:    {ip}"
+    )
+
+    print(
+        f"  Network:       {network_name}"
+    )
+
+    print(
+        f"  Ping:          "
+        f"{'Enabled' if ping else 'Disabled'}"
+    )
+
+    print(
+        f"  SNMP:          "
+        f"{'Enabled' if snmp else 'Disabled'}"
+    )
+
+    print(
+        f"  Monitoring:    "
+        f"{monitoring_mode.upper()}"
+    )
+
     print()
 
     answer = input(
@@ -129,35 +279,54 @@ def device_add():
     if answer != "y":
 
         print()
-        ui.warning("Cancelled.")
+
+        ui.warning(
+            "Cancelled."
+        )
+
         print()
+
         return False
 
     try:
 
-        add_monitored_device(
-            name,
-            ip,
-            ping,
-            snmp,
-            network_id
+        config.add_device(
+            name=name,
+            ip=ip,
+            ping=ping,
+            snmp=snmp,
+            network_id=network_id,
+            monitoring_mode=monitoring_mode
         )
 
     except Exception as e:
 
         print()
-        ui.error(str(e))
+
+        ui.error(
+            str(e)
+        )
+
         print()
+
         return True
 
     print()
 
-    ui.success("Device added successfully.")
+    ui.success(
+        "Device added successfully."
+    )
 
-    ui.info("Restarting NetMonitor...")
+    ui.info(
+        "Restarting NetMonitor..."
+    )
 
     subprocess.run(
-        ["systemctl", "restart", "netmonitor"],
+        [
+            "systemctl",
+            "restart",
+            "netmonitor"
+        ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )

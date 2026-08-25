@@ -201,7 +201,8 @@ def add_device(
     ip,
     ping=True,
     snmp=False,
-    network_id=1
+    network_id=1,
+    monitoring_mode="normal"
 ):
 
     data = load_devices()
@@ -217,12 +218,23 @@ def add_device(
         if item["id"] == network_id:
 
             network = item
+
             break
 
     if network is None:
 
         raise Exception(
             "Invalid network."
+        )
+
+    if monitoring_mode not in (
+        "normal",
+        "standby",
+        "conditional"
+    ):
+
+        raise Exception(
+            f"Invalid monitoring mode: {monitoring_mode}"
         )
 
     gateway = network["gateway"]
@@ -241,7 +253,8 @@ def add_device(
     for existing in devices:
 
         if (
-            existing.get("network_id", 1) == network_id
+            existing.get("network_id", 1)
+            == network_id
             and
             existing["ip"] == ip
         ):
@@ -251,9 +264,11 @@ def add_device(
             )
 
         if (
-            existing.get("network_id", 1) == network_id
+            existing.get("network_id", 1)
+            == network_id
             and
-            existing["name"].lower() == name.lower()
+            existing["name"].lower()
+            == name.lower()
         ):
 
             raise Exception(
@@ -279,7 +294,7 @@ def add_device(
             "snmp": snmp
         },
         "monitoring": {
-            "mode": "normal"
+            "mode": monitoring_mode
         }
     }
 
