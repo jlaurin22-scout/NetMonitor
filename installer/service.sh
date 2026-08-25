@@ -28,12 +28,11 @@ EOF
 Description=Scout Network Monitor Web GUI
 After=network-online.target netmonitor.service
 Wants=network-online.target
-Requires=netmonitor.service
 
 [Service]
 Type=simple
-User=$INSTALL_USER
-Group=$INSTALL_GROUP
+User=$WEB_USER
+Group=$NETMONITOR_GROUP
 WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/gunicorn --bind 0.0.0.0:8080 --workers 1 --access-logfile - --error-logfile - web.app:app
 Restart=always

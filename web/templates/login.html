@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Network Monitor — Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-card">
+        <div class="auth-brand">
+            <div class="brand-title">Scout Network Monitor</div>
+            <div class="auth-subtitle">Web Administration</div>
+        </div>
+
+        <div class="auth-heading">
+            <h1>Sign In</h1>
+            <p>Enter your Scout credentials to continue.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-error">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="post" class="auth-form">
+            <label>
+                Username
+                <input
+                    type="text"
+                    name="username"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+            </label>
+
+            <label>
+                Password
+                <input
+                    type="password"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                >
+            </label>
+
+            <button class="button button-primary auth-submit" type="submit">
+                Sign In
+            </button>
+        </form>
+    </main>
+</body>
+</html>

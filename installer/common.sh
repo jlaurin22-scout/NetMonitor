@@ -10,6 +10,9 @@ CONFIG_DIR="/etc/netmonitor"
 DATA_DIR="/var/lib/netmonitor"
 SERVICE_DIR="/etc/systemd/system"
 
+NETMONITOR_GROUP="netmonitor"
+WEB_USER="netmonitor-web"
+
 
 #
 # Determine the user who launched the installer.
@@ -132,6 +135,7 @@ prepare_installation()
 
         rm -rf "$CONFIG_DIR"
         rm -f "$DATA_DIR/netmonitor.db"
+        rm -f "$DATA_DIR/web.db"
 
         echo "Existing configuration and database removed."
         echo

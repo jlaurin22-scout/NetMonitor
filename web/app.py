@@ -3,7 +3,12 @@
 import os
 import sys
 
-from flask import Flask
+from flask import (
+    Flask,
+    redirect,
+    request,
+    url_for,
+)
 
 
 PROJECT_DIR = os.path.dirname(
@@ -23,10 +28,20 @@ if PROJECT_DIR not in sys.path:
 
 def create_app():
 
+    from web import auth
+
     app = Flask(
         __name__,
         template_folder="templates",
         static_folder="static"
+    )
+
+    app.secret_key = auth.initialize()
+
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        PERMANENT_SESSION_LIFETIME=28800,
     )
 
     from web.routes.dashboard import (
@@ -35,6 +50,8 @@ def create_app():
     )
 
     from web.routes.api import api
+    from web.routes.auth import auth_routes
+    from web.routes.configuration import configuration
 
     app.register_blueprint(
         dashboard
@@ -44,9 +61,58 @@ def create_app():
         api
     )
 
+    app.register_blueprint(
+        auth_routes
+    )
+
+    app.register_blueprint(
+        configuration
+    )
+
     app.jinja_env.globals[
         "network_is_healthy"
     ] = network_is_healthy
+
+    app.context_processor(
+        lambda: {
+            "current_user": auth.current_user()
+        }
+    )
+
+    @app.before_request
+    def require_authentication():
+
+        if request.endpoint in (
+            "auth.login",
+            "auth.logout",
+            "auth.uninitialized",
+            "static",
+        ):
+
+            return None
+
+        if not auth.has_users():
+
+            return redirect(
+                url_for("auth.uninitialized")
+            )
+
+        if auth.current_user() is None:
+
+            next_url = request.full_path
+
+            if next_url.endswith("?"):
+
+                next_url = next_url[:-1]
+
+            return redirect(
+                url_for(
+                    "auth.login",
+                    next=next_url
+                )
+            )
+
+        return None
 
     return app
 

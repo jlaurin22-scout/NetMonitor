@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Network Monitor — Configuration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-title">Scout Network Monitor</div>
+        <div class="brand-site">
+            {{ customer }}
+            {% if address %}
+                <span class="separator">—</span>
+                {{ address }}
+            {% endif %}
+        </div>
+    </div>
+    <div class="account-area">
+        <span class="account-user">{{ current_user.username }}</span>
+        <span class="account-role">{{ current_user.role|upper }}</span>
+        <a class="account-logout" href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
+
+    <div class="service-area">
+        <div class="service-indicator">
+            <span class="status-dot dot-up"></span>
+            <span class="service-label">Configuration</span>
+        </div>
+    </div>
+</header>
+<nav class="navigation">
+    <a href="/">Dashboard</a>
+    <a href="/configuration" class="active">Configuration</a>
+    <a href="#">Events</a>
+    <a href="#">Incidents</a>
+    <a href="#">Reports</a>
+</nav>
+<main class="dashboard">
+    <section class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Configuration</h2>
+                <p>Manage Scout Network Monitor configuration</p>
+            </div>
+        </div>
+        <div class="configuration-grid">
+            <a class="configuration-card" href="#">
+                <strong>Customer</strong>
+                <span>Customer information and address</span>
+                <small>Coming next</small>
+            </a>
+            <a class="configuration-card" href="#">
+                <strong>Networks</strong>
+                <span>LAN, WAN and monitored network interfaces</span>
+                <small>Coming next</small>
+            </a>
+            <a class="configuration-card configuration-card-active" href="{{ url_for('configuration.devices') }}">
+                <strong>Devices</strong>
+                <span>Monitored devices and monitoring policy</span>
+                <small>Open configuration →</small>
+            </a>
+            <a class="configuration-card" href="#">
+                <strong>Monitoring</strong>
+                <span>Polling intervals and monitoring behavior</span>
+                <small>Coming next</small>
+            </a>
+            <a class="configuration-card" href="#">
+                <strong>Internet Check</strong>
+                <span>Internet connectivity targets</span>
+                <small>Coming next</small>
+            </a>
+            <a class="configuration-card" href="#">
+                <strong>DNS Check</strong>
+                <span>DNS server and lookup configuration</span>
+                <small>Coming next</small>
+            </a>
+            <a class="configuration-card" href="#">
+                <strong>Notifications</strong>
+                <span>NTFY notification configuration</span>
+                <small>Coming next</small>
+            </a>
+        </div>
+    </section>
+    {% if page == 'devices' %}
+    <section class="card configuration-section">
+        <div class="section-heading">
+            <div>
+                <h2>Devices</h2>
+                <p>Configure monitored devices, networks and monitoring modes</p>
+            </div>
+            {% if current_user.role == 'admin' %}
+            <button class="button button-primary" type="button" data-open-modal="add-device-modal">+ Add Device</button>
+            {% endif %}
+        </div>
+        {% if request.args.get('message') %}
+        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        {% endif %}
+        {% if request.args.get('error') %}
+        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        {% endif %}
+        {% if not devices %}
+        <div class="empty-state">
+            <span class="empty-check">✓</span>
+            <div>
+                <strong>No monitored devices configured</strong>
+                <p>Add the first device to begin monitoring it.</p>
+            </div>
+        </div>
+        {% else %}
+        {% for network in networks %}
+        {% set network_devices = devices | selectattr('network_id', 'equalto', network.id) | list %}
+        <div class="device-group">
+            <div class="device-group-heading">
+                <div>
+                    <h3>{{ network.name }}</h3>
+                    <span>{{ network.interface }} · Gateway {{ network.gateway }}</span>
+                </div>
+                <span class="device-group-count">{{ network_devices|length }} device{% if network_devices|length != 1 %}s{% endif %}</span>
+            </div>
+            {% if network_devices %}
+            <div class="configuration-table-wrap">
+                <table class="configuration-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>IP Address</th>
+                            <th>Mode</th>
+                            <th>Checks</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for device in network_devices %}
+                        <tr>
+                            <td>{{ device.id }}</td>
+                            <td class="table-name">{{ device.name }}</td>
+                            <td>{{ device.ip }}</td>
+                            <td>
+                                <span class="mode-badge mode-{{ device.monitoring_mode }}">{{ device.monitoring_label }}</span>
+                            </td>
+                            <td>
+                                <span class="check-badge {% if device.ping %}check-enabled{% endif %}">PING</span>
+                                <span class="check-badge {% if device.snmp %}check-enabled{% endif %}">SNMP</span>
+                            </td>
+                            <td>
+                                <span class="status-badge {% if device.state == 'UP' or device.state == 'STANDBY' %}status-badge-up{% elif device.state == 'DOWN' %}status-badge-down{% else %}status-badge-unknown{% endif %}">
+                                    {{ device.state }}
+                                </span>
+                            </td>
+                            <td class="table-actions">
+                                {% if current_user.role == 'admin' %}
+                                <button class="button button-small" type="button" data-edit-device='{{ device | tojson }}'>Edit</button>
+                                <form method="post" action="{{ url_for('configuration.remove_device', device_id=device.id) }}" onsubmit="return confirm('Remove {{ device.name | e }}?');">
+                                    <button class="button button-small button-danger" type="submit">Remove</button>
+                                </form>
+                                {% else %}
+                                <span class="viewer-label">View only</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="device-group-empty">No monitored devices assigned to this network.</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+    </section>
+    {% endif %}
+</main>
+<div class="modal" id="add-device-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="add-device-modal"></div>
+    <div class="modal-panel">
+        <div class="modal-heading">
+            <div>
+                <h2>Add Device</h2>
+                <p>Add a new monitored device</p>
+            </div>
+            <button class="modal-close" type="button" data-close-modal="add-device-modal">×</button>
+        </div>
+        <form method="post" action="{{ url_for('configuration.add_device') }}">
+            <div class="form-grid">
+                <label>Device Name<input name="name" required></label>
+                <label>IP Address<input name="ip" required></label>
+                <label>Network<select name="network_id" required>{% for network in networks %}<option value="{{ network.id }}">{{ network.name }} — {{ network.interface }}</option>{% endfor %}</select></label>
+                <label>Monitoring Mode<select name="monitoring_mode"><option value="normal">Normal</option><option value="standby">Standby</option><option value="conditional">Conditional</option></select></label>
+            </div>
+            <div class="form-checks">
+                <label><input type="checkbox" name="ping" checked> Enable Ping monitoring</label>
+                <label><input type="checkbox" name="snmp"> Enable SNMP monitoring</label>
+            </div>
+            <div class="modal-actions">
+                <button class="button" type="button" data-close-modal="add-device-modal">Cancel</button>
+                <button class="button button-primary" type="submit">Add Device</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal" id="edit-device-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="edit-device-modal"></div>
+    <div class="modal-panel">
+        <div class="modal-heading">
+            <div>
+                <h2>Edit Device</h2>
+                <p>Update monitored device configuration</p>
+            </div>
+            <button class="modal-close" type="button" data-close-modal="edit-device-modal">×</button>
+        </div>
+        <form method="post" id="edit-device-form" action="">
+            <div class="form-grid">
+                <label>Device Name<input name="name" id="edit-name" required></label>
+                <label>IP Address<input name="ip" id="edit-ip" required></label>
+                <label>Network<select name="network_id" id="edit-network" required>{% for network in networks %}<option value="{{ network.id }}">{{ network.name }} — {{ network.interface }}</option>{% endfor %}</select></label>
+                <label>Monitoring Mode<select name="monitoring_mode" id="edit-mode"><option value="normal">Normal</option><option value="standby">Standby</option><option value="conditional">Conditional</option></select></label>
+            </div>
+            <div class="form-checks">
+                <label><input type="checkbox" name="ping" id="edit-ping"> Enable Ping monitoring</label>
+                <label><input type="checkbox" name="snmp" id="edit-snmp"> Enable SNMP monitoring</label>
+            </div>
+            <div class="modal-actions">
+                <button class="button" type="button" data-close-modal="edit-device-modal">Cancel</button>
+                <button class="button button-primary" type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.querySelectorAll('[data-open-modal]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const modal = document.getElementById(button.dataset.openModal);
+        modal.classList.add('modal-open');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+});
+document.querySelectorAll('[data-close-modal]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const modal = document.getElementById(button.dataset.closeModal);
+        modal.classList.remove('modal-open');
+        modal.setAttribute('aria-hidden', 'true');
+    });
+});
+document.querySelectorAll('[data-edit-device]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const device = JSON.parse(button.dataset.editDevice);
+        document.getElementById('edit-device-form').action = '/configuration/devices/' + device.id + '/edit';
+        document.getElementById('edit-name').value = device.name;
+        document.getElementById('edit-ip').value = device.ip;
+        document.getElementById('edit-network').value = device.network_id;
+        document.getElementById('edit-mode').value = device.monitoring_mode;
+        document.getElementById('edit-ping').checked = device.ping;
+        document.getElementById('edit-snmp').checked = device.snmp;
+        const modal = document.getElementById('edit-device-modal');
+        modal.classList.add('modal-open');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+});
+document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('.modal.modal-open').forEach(function (modal) {
+        modal.classList.remove('modal-open');
+        modal.setAttribute('aria-hidden', 'true');
+    });
+});
+</script>
+</body>
+</html>

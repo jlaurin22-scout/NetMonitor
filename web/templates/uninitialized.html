@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Network Monitor — Authentication</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-card">
+        <div class="auth-brand">
+            <div class="brand-title">Scout Network Monitor</div>
+            <div class="auth-subtitle">Web Administration</div>
+        </div>
+
+        <div class="auth-heading">
+            <h1>Authentication Not Initialized</h1>
+            <p>
+                Create the initial administrator and viewer accounts from the Scout server console.
+            </p>
+        </div>
+
+        <div class="auth-instructions">
+            <strong>Run:</strong>
+            <code>python3 -m web.auth_cli</code>
+        </div>
+    </main>
+</body>
+</html>

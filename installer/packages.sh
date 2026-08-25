@@ -4,8 +4,6 @@ install_packages()
 {
     echo "Installing required packages..."
 
-    apt update
-
     apt install -y \
         python3 \
         python3-pip \
@@ -25,8 +23,10 @@ install_packages()
         dnsutils \
         net-tools \
         iproute2 \
+        acl \
         curl
 
     echo
     echo "Package installation complete."
+    echo
 }
