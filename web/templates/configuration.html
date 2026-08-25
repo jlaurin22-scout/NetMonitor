@@ -31,6 +31,7 @@
         </div>
     </div>
 </header>
+
 <nav class="navigation">
     <a href="/">Dashboard</a>
     <a href="/configuration" class="active">Configuration</a>
@@ -38,7 +39,9 @@
     <a href="#">Incidents</a>
     <a href="#">Reports</a>
 </nav>
+
 <main class="dashboard">
+
     <section class="card">
         <div class="section-heading">
             <div>
@@ -46,47 +49,63 @@
                 <p>Manage Scout Network Monitor configuration</p>
             </div>
         </div>
+
         <div class="configuration-grid">
-            <a class="configuration-card {% if page == 'customer' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.customer') }}">
+
+            <a class="configuration-card {% if page == 'customer' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.customer') }}">
                 <strong>Customer</strong>
                 <span>Customer information and address</span>
                 <small>Open configuration →</small>
             </a>
-            <a class="configuration-card {% if page == 'networks' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.networks') }}">
+
+            <a class="configuration-card {% if page == 'networks' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.networks') }}">
                 <strong>Networks</strong>
                 <span>LAN, WAN and monitored network interfaces</span>
                 <small>Open configuration →</small>
             </a>
-            <a class="configuration-card {% if page == 'devices' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.devices') }}">
+
+            <a class="configuration-card {% if page == 'devices' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.devices') }}">
                 <strong>Devices</strong>
                 <span>Monitored devices and monitoring policy</span>
                 <small>Open configuration →</small>
             </a>
-            <a class="configuration-card" href="#">
+
+            <a class="configuration-card {% if page == 'monitoring' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.monitoring') }}">
                 <strong>Monitoring</strong>
                 <span>Polling intervals and monitoring behavior</span>
-                <small>Coming next</small>
+                <small>Open configuration →</small>
             </a>
+
             <a class="configuration-card" href="#">
                 <strong>Internet Check</strong>
                 <span>Internet connectivity targets</span>
                 <small>Coming next</small>
             </a>
+
             <a class="configuration-card" href="#">
                 <strong>DNS Check</strong>
                 <span>DNS server and lookup configuration</span>
                 <small>Coming next</small>
             </a>
+
             <a class="configuration-card" href="#">
                 <strong>Notifications</strong>
                 <span>NTFY notification configuration</span>
                 <small>Coming next</small>
             </a>
+
         </div>
     </section>
 
+
     {% if page == 'customer' %}
+
     <section class="card configuration-section">
+
         <div class="section-heading">
             <div>
                 <h2>Customer</h2>
@@ -95,67 +114,110 @@
         </div>
 
         {% if request.args.get('message') %}
-        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
         {% endif %}
 
         {% if request.args.get('error') %}
-        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
         {% endif %}
 
         {% if current_user.role == 'admin' %}
-        <form method="post" action="{{ url_for('configuration.save_customer') }}">
+
+        <form method="post"
+              action="{{ url_for('configuration.save_customer') }}">
+
             <div class="form-grid">
+
                 <label>
                     Customer
-                    <input name="customer" value="{{ customer }}" required>
+                    <input name="customer"
+                           value="{{ customer }}"
+                           required>
                 </label>
+
                 <label>
                     Address
-                    <input name="address" value="{{ address }}">
+                    <input name="address"
+                           value="{{ address }}">
                 </label>
+
             </div>
 
             <div class="modal-actions">
-                <button class="button" type="button" onclick="window.location.href='{{ url_for('configuration.index') }}'">Cancel</button>
-                <button class="button button-primary" type="submit">Save Changes</button>
+                <button class="button"
+                        type="button"
+                        onclick="window.location.href='{{ url_for('configuration.index') }}'">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Save Changes
+                </button>
             </div>
+
         </form>
+
         {% else %}
+
         <div class="form-grid">
+
             <label>
                 Customer
                 <input value="{{ customer }}" disabled>
             </label>
+
             <label>
                 Address
                 <input value="{{ address }}" disabled>
             </label>
+
         </div>
+
         {% endif %}
+
     </section>
+
     {% endif %}
 
+
     {% if page == 'networks' %}
+
     <section class="card configuration-section">
+
         <div class="section-heading">
             <div>
                 <h2>Networks</h2>
                 <p>Configure monitored network interfaces, gateways and DNS servers</p>
             </div>
+
             {% if current_user.role == 'admin' %}
-            <button class="button button-primary" type="button" data-open-modal="add-network-modal">+ Add Network</button>
+            <button class="button button-primary"
+                    type="button"
+                    data-open-modal="add-network-modal">
+                + Add Network
+            </button>
             {% endif %}
         </div>
 
         {% if request.args.get('message') %}
-        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
         {% endif %}
 
         {% if request.args.get('error') %}
-        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
         {% endif %}
 
         {% if not networks %}
+
         <div class="empty-state">
             <span class="empty-check">✓</span>
             <div>
@@ -163,9 +225,13 @@
                 <p>Add a network to begin monitoring it.</p>
             </div>
         </div>
+
         {% else %}
+
         <div class="configuration-table-wrap">
+
             <table class="configuration-table">
+
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -179,16 +245,29 @@
                         <th></th>
                     </tr>
                 </thead>
+
                 <tbody>
+
                 {% for network in networks %}
+
                     <tr>
+
                         <td>{{ network.id }}</td>
-                        <td class="table-name">{{ network.name }}</td>
+
+                        <td class="table-name">
+                            {{ network.name }}
+                        </td>
+
                         <td>{{ network.interface }}</td>
+
                         <td>{{ network.ip }}</td>
+
                         <td>/{{ network.prefix }}</td>
+
                         <td>{{ network.gateway }}</td>
+
                         <td>{{ network.gateway_name }}</td>
+
                         <td>
                             {% for dns in network.dns %}
                                 {% if dns %}
@@ -196,46 +275,92 @@
                                 {% endif %}
                             {% endfor %}
                         </td>
+
                         <td class="table-actions">
+
                             {% if current_user.role == 'admin' %}
-                            <button class="button button-small" type="button" data-edit-network='{{ network | tojson }}'>Edit</button>
-                            <form method="post" action="{{ url_for('configuration.remove_network', network_id=network.id) }}" onsubmit="return confirm('Remove {{ network.name | e }}?');">
-                                <button class="button button-small button-danger" type="submit">Remove</button>
+
+                            <button class="button button-small"
+                                    type="button"
+                                    data-edit-network='{{ network | tojson }}'>
+                                Edit
+                            </button>
+
+                            <form method="post"
+                                  action="{{ url_for('configuration.remove_network', network_id=network.id) }}"
+                                  onsubmit="return confirm('Remove {{ network.name | e }}?');">
+
+                                <button class="button button-small button-danger"
+                                        type="submit">
+                                    Remove
+                                </button>
+
                             </form>
+
                             {% else %}
-                            <span class="viewer-label">View only</span>
+
+                            <span class="viewer-label">
+                                View only
+                            </span>
+
                             {% endif %}
+
                         </td>
+
                     </tr>
+
                 {% endfor %}
+
                 </tbody>
+
             </table>
+
         </div>
+
         {% endif %}
+
     </section>
+
     {% endif %}
 
+
     {% if page == 'devices' %}
+
     <section class="card configuration-section">
+
         <div class="section-heading">
+
             <div>
                 <h2>Devices</h2>
                 <p>Configure monitored devices, networks and monitoring modes</p>
             </div>
+
             {% if current_user.role == 'admin' %}
-            <button class="button button-primary" type="button" data-open-modal="add-device-modal">+ Add Device</button>
+
+            <button class="button button-primary"
+                    type="button"
+                    data-open-modal="add-device-modal">
+                + Add Device
+            </button>
+
             {% endif %}
+
         </div>
 
         {% if request.args.get('message') %}
-        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
         {% endif %}
 
         {% if request.args.get('error') %}
-        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
         {% endif %}
 
         {% if not devices %}
+
         <div class="empty-state">
             <span class="empty-check">✓</span>
             <div>
@@ -243,20 +368,39 @@
                 <p>Add the first device to begin monitoring it.</p>
             </div>
         </div>
+
         {% else %}
+
         {% for network in networks %}
-        {% set network_devices = devices | selectattr('network_id', 'equalto', network.id) | list %}
+
+        {% set network_devices =
+            devices | selectattr('network_id', 'equalto', network.id) | list %}
+
         <div class="device-group">
+
             <div class="device-group-heading">
+
                 <div>
                     <h3>{{ network.name }}</h3>
-                    <span>{{ network.interface }} · Gateway {{ network.gateway }}</span>
+                    <span>
+                        {{ network.interface }}
+                        · Gateway {{ network.gateway }}
+                    </span>
                 </div>
-                <span class="device-group-count">{{ network_devices|length }} device{% if network_devices|length != 1 %}s{% endif %}</span>
+
+                <span class="device-group-count">
+                    {{ network_devices|length }}
+                    device{% if network_devices|length != 1 %}s{% endif %}
+                </span>
+
             </div>
+
             {% if network_devices %}
+
             <div class="configuration-table-wrap">
+
                 <table class="configuration-table">
+
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -268,316 +412,881 @@
                             <th></th>
                         </tr>
                     </thead>
+
                     <tbody>
+
                     {% for device in network_devices %}
+
                         <tr>
+
                             <td>{{ device.id }}</td>
-                            <td class="table-name">{{ device.name }}</td>
+
+                            <td class="table-name">
+                                {{ device.name }}
+                            </td>
+
                             <td>{{ device.ip }}</td>
+
                             <td>
-                                <span class="mode-badge mode-{{ device.monitoring_mode }}">{{ device.monitoring_label }}</span>
+                                <span class="mode-badge mode-{{ device.monitoring_mode }}">
+                                    {{ device.monitoring_label }}
+                                </span>
                             </td>
+
                             <td>
-                                <span class="check-badge {% if device.ping %}check-enabled{% endif %}">PING</span>
-                                <span class="check-badge {% if device.snmp %}check-enabled{% endif %}">SNMP</span>
+                                <span class="check-badge {% if device.ping %}check-enabled{% endif %}">
+                                    PING
+                                </span>
+
+                                <span class="check-badge {% if device.snmp %}check-enabled{% endif %}">
+                                    SNMP
+                                </span>
                             </td>
+
                             <td>
                                 <span class="status-badge {% if device.state == 'UP' or device.state == 'STANDBY' %}status-badge-up{% elif device.state == 'DOWN' %}status-badge-down{% else %}status-badge-unknown{% endif %}">
                                     {{ device.state }}
                                 </span>
                             </td>
+
                             <td class="table-actions">
+
                                 {% if current_user.role == 'admin' %}
-                                <button class="button button-small" type="button" data-edit-device='{{ device | tojson }}'>Edit</button>
-                                <form method="post" action="{{ url_for('configuration.remove_device', device_id=device.id) }}" onsubmit="return confirm('Remove {{ device.name | e }}?');">
-                                    <button class="button button-small button-danger" type="submit">Remove</button>
+
+                                <button class="button button-small"
+                                        type="button"
+                                        data-edit-device='{{ device | tojson }}'>
+                                    Edit
+                                </button>
+
+                                <form method="post"
+                                      action="{{ url_for('configuration.remove_device', device_id=device.id) }}"
+                                      onsubmit="return confirm('Remove {{ device.name | e }}?');">
+
+                                    <button class="button button-small button-danger"
+                                            type="submit">
+                                        Remove
+                                    </button>
+
                                 </form>
+
                                 {% else %}
-                                <span class="viewer-label">View only</span>
+
+                                <span class="viewer-label">
+                                    View only
+                                </span>
+
                                 {% endif %}
+
                             </td>
+
                         </tr>
+
                     {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
+
             {% else %}
-            <div class="device-group-empty">No monitored devices assigned to this network.</div>
+
+            <div class="device-group-empty">
+                No monitored devices assigned to this network.
+            </div>
+
             {% endif %}
+
         </div>
+
         {% endfor %}
+
         {% endif %}
+
     </section>
+
     {% endif %}
+
+
+    {% if page == 'monitoring' %}
+
+    <section class="card configuration-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Monitoring</h2>
+                <p>Configure monitoring polling intervals</p>
+            </div>
+
+        </div>
+
+        {% if request.args.get('message') %}
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
+        {% endif %}
+
+        {% if request.args.get('error') %}
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
+        {% endif %}
+
+        {% set monitor = settings.get('monitor', {}) %}
+
+        {% if current_user.role == 'admin' %}
+
+        <form method="post"
+              action="{{ url_for('configuration.save_monitoring') }}">
+
+            <div class="form-grid">
+
+                <label>
+                    Gateway Check Interval
+                    <input name="gateway_interval"
+                           type="number"
+                           min="1"
+                           value="{{ monitor.get('gateway_interval', 30) }}"
+                           required>
+                    <small>Seconds between gateway checks.</small>
+                </label>
+
+                <label>
+                    Internet Check Interval
+                    <input name="internet_interval"
+                           type="number"
+                           min="1"
+                           value="{{ monitor.get('internet_interval', 30) }}"
+                           required>
+                    <small>Seconds between internet checks.</small>
+                </label>
+
+                <label>
+                    DNS Check Interval
+                    <input name="dns_interval"
+                           type="number"
+                           min="1"
+                           value="{{ monitor.get('dns_interval', 30) }}"
+                           required>
+                    <small>Seconds between DNS checks.</small>
+                </label>
+
+                <label>
+                    Device Check Interval
+                    <input name="device_interval"
+                           type="number"
+                           min="1"
+                           value="{{ monitor.get('device_interval', 60) }}"
+                           required>
+                    <small>Seconds between device checks.</small>
+                </label>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="button"
+                        type="button"
+                        onclick="window.location.href='{{ url_for('configuration.index') }}'">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+        {% else %}
+
+        <div class="form-grid">
+
+            <label>
+                Gateway Check Interval
+                <input value="{{ monitor.get('gateway_interval', 30) }}"
+                       disabled>
+                <small>Seconds between gateway checks.</small>
+            </label>
+
+            <label>
+                Internet Check Interval
+                <input value="{{ monitor.get('internet_interval', 30) }}"
+                       disabled>
+                <small>Seconds between internet checks.</small>
+            </label>
+
+            <label>
+                DNS Check Interval
+                <input value="{{ monitor.get('dns_interval', 30) }}"
+                       disabled>
+                <small>Seconds between DNS checks.</small>
+            </label>
+
+            <label>
+                Device Check Interval
+                <input value="{{ monitor.get('device_interval', 60) }}"
+                       disabled>
+                <small>Seconds between device checks.</small>
+            </label>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+    {% endif %}
+
 </main>
 
-<div class="modal" id="add-network-modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="add-network-modal"></div>
+
+<div class="modal"
+     id="add-network-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="add-network-modal">
+    </div>
+
     <div class="modal-panel">
+
         <div class="modal-heading">
+
             <div>
                 <h2>Add Network</h2>
                 <p>Add a monitored network interface</p>
             </div>
-            <button class="modal-close" type="button" data-close-modal="add-network-modal">×</button>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="add-network-modal">
+                ×
+            </button>
+
         </div>
 
-        <form method="post" action="{{ url_for('configuration.add_network') }}">
+        <form method="post"
+              action="{{ url_for('configuration.add_network') }}">
+
             <div class="form-grid">
+
                 <label>
                     Network Name
                     <input name="name" required>
                 </label>
+
                 <label>
                     Interface
                     <input name="interface" required>
                 </label>
+
                 <label>
                     IP Address
                     <input name="ip" required>
                 </label>
+
                 <label>
                     Prefix
-                    <input name="prefix" type="number" min="1" max="32" required>
+                    <input name="prefix"
+                           type="number"
+                           min="1"
+                           max="32"
+                           required>
                 </label>
+
                 <label>
                     Gateway
                     <input name="gateway" required>
                 </label>
+
                 <label>
                     Router / Firewall
                     <input name="gateway_name" required>
                 </label>
+
                 <label>
                     Primary DNS
                     <input name="dns1">
                 </label>
+
                 <label>
                     Secondary DNS
                     <input name="dns2">
                 </label>
+
             </div>
 
             <div class="modal-actions">
-                <button class="button" type="button" data-close-modal="add-network-modal">Cancel</button>
-                <button class="button button-primary" type="submit">Add Network</button>
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="add-network-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Add Network
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
-<div class="modal" id="edit-network-modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="edit-network-modal"></div>
+
+<div class="modal"
+     id="edit-network-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="edit-network-modal">
+    </div>
+
     <div class="modal-panel">
+
         <div class="modal-heading">
+
             <div>
                 <h2>Edit Network</h2>
                 <p>Update monitored network configuration</p>
             </div>
-            <button class="modal-close" type="button" data-close-modal="edit-network-modal">×</button>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="edit-network-modal">
+                ×
+            </button>
+
         </div>
 
-        <form method="post" id="edit-network-form" action="">
+        <form method="post"
+              id="edit-network-form"
+              action="">
+
             <div class="form-grid">
+
                 <label>
                     Network Name
-                    <input name="name" id="edit-network-name" required>
+                    <input name="name"
+                           id="edit-network-name"
+                           required>
                 </label>
+
                 <label>
                     Interface
-                    <input name="interface" id="edit-network-interface" required>
+                    <input name="interface"
+                           id="edit-network-interface"
+                           required>
                 </label>
+
                 <label>
                     IP Address
-                    <input name="ip" id="edit-network-ip" required>
+                    <input name="ip"
+                           id="edit-network-ip"
+                           required>
                 </label>
+
                 <label>
                     Prefix
-                    <input name="prefix" id="edit-network-prefix" type="number" min="1" max="32" required>
+                    <input name="prefix"
+                           id="edit-network-prefix"
+                           type="number"
+                           min="1"
+                           max="32"
+                           required>
                 </label>
+
                 <label>
                     Gateway
-                    <input name="gateway" id="edit-network-gateway" required>
+                    <input name="gateway"
+                           id="edit-network-gateway"
+                           required>
                 </label>
+
                 <label>
                     Router / Firewall
-                    <input name="gateway_name" id="edit-network-gateway-name" required>
+                    <input name="gateway_name"
+                           id="edit-network-gateway-name"
+                           required>
                 </label>
+
                 <label>
                     Primary DNS
-                    <input name="dns1" id="edit-network-dns1">
+                    <input name="dns1"
+                           id="edit-network-dns1">
                 </label>
+
                 <label>
                     Secondary DNS
-                    <input name="dns2" id="edit-network-dns2">
+                    <input name="dns2"
+                           id="edit-network-dns2">
                 </label>
+
             </div>
 
             <div class="modal-actions">
-                <button class="button" type="button" data-close-modal="edit-network-modal">Cancel</button>
-                <button class="button button-primary" type="submit">Save Changes</button>
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="edit-network-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Save Changes
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
-<div class="modal" id="add-device-modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="add-device-modal"></div>
+
+<div class="modal"
+     id="add-device-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="add-device-modal">
+    </div>
+
     <div class="modal-panel">
+
         <div class="modal-heading">
+
             <div>
                 <h2>Add Device</h2>
                 <p>Add a new monitored device</p>
             </div>
-            <button class="modal-close" type="button" data-close-modal="add-device-modal">×</button>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="add-device-modal">
+                ×
+            </button>
+
         </div>
-        <form method="post" action="{{ url_for('configuration.add_device') }}">
+
+        <form method="post"
+              action="{{ url_for('configuration.add_device') }}">
+
             <div class="form-grid">
-                <label>Device Name<input name="name" required></label>
-                <label>IP Address<input name="ip" required></label>
-                <label>Network<select name="network_id" required>{% for network in networks %}<option value="{{ network.id }}">{{ network.name }} — {{ network.interface }}</option>{% endfor %}</select></label>
-                <label>Monitoring Mode<select name="monitoring_mode"><option value="normal">Normal</option><option value="standby">Standby</option><option value="conditional">Conditional</option></select></label>
+
+                <label>
+                    Device Name
+                    <input name="name" required>
+                </label>
+
+                <label>
+                    IP Address
+                    <input name="ip" required>
+                </label>
+
+                <label>
+                    Network
+                    <select name="network_id" required>
+                        {% for network in networks %}
+                        <option value="{{ network.id }}">
+                            {{ network.name }} — {{ network.interface }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Monitoring Mode
+                    <select name="monitoring_mode">
+                        <option value="normal">Normal</option>
+                        <option value="standby">Standby</option>
+                        <option value="conditional">Conditional</option>
+                    </select>
+                </label>
+
             </div>
+
             <div class="form-checks">
-                <label><input type="checkbox" name="ping" checked> Enable Ping monitoring</label>
-                <label><input type="checkbox" name="snmp"> Enable SNMP monitoring</label>
+
+                <label>
+                    <input type="checkbox"
+                           name="ping"
+                           checked>
+                    Enable Ping monitoring
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           name="snmp">
+                    Enable SNMP monitoring
+                </label>
+
             </div>
+
             <div class="modal-actions">
-                <button class="button" type="button" data-close-modal="add-device-modal">Cancel</button>
-                <button class="button button-primary" type="submit">Add Device</button>
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="add-device-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Add Device
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
-<div class="modal" id="edit-device-modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="edit-device-modal"></div>
+
+<div class="modal"
+     id="edit-device-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="edit-device-modal">
+    </div>
+
     <div class="modal-panel">
+
         <div class="modal-heading">
+
             <div>
                 <h2>Edit Device</h2>
                 <p>Update monitored device configuration</p>
             </div>
-            <button class="modal-close" type="button" data-close-modal="edit-device-modal">×</button>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="edit-device-modal">
+                ×
+            </button>
+
         </div>
-        <form method="post" id="edit-device-form" action="">
+
+        <form method="post"
+              id="edit-device-form"
+              action="">
+
             <div class="form-grid">
-                <label>Device Name<input name="name" id="edit-name" required></label>
-                <label>IP Address<input name="ip" id="edit-ip" required></label>
-                <label>Network<select name="network_id" id="edit-network" required>{% for network in networks %}<option value="{{ network.id }}">{{ network.name }} — {{ network.interface }}</option>{% endfor %}</select></label>
-                <label>Monitoring Mode<select name="monitoring_mode" id="edit-mode"><option value="normal">Normal</option><option value="standby">Standby</option><option value="conditional">Conditional</option></select></label>
+
+                <label>
+                    Device Name
+                    <input name="name"
+                           id="edit-name"
+                           required>
+                </label>
+
+                <label>
+                    IP Address
+                    <input name="ip"
+                           id="edit-ip"
+                           required>
+                </label>
+
+                <label>
+                    Network
+                    <select name="network_id"
+                            id="edit-network"
+                            required>
+                        {% for network in networks %}
+                        <option value="{{ network.id }}">
+                            {{ network.name }} — {{ network.interface }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Monitoring Mode
+                    <select name="monitoring_mode"
+                            id="edit-mode">
+                        <option value="normal">Normal</option>
+                        <option value="standby">Standby</option>
+                        <option value="conditional">Conditional</option>
+                    </select>
+                </label>
+
             </div>
+
             <div class="form-checks">
-                <label><input type="checkbox" name="ping" id="edit-ping"> Enable Ping monitoring</label>
-                <label><input type="checkbox" name="snmp" id="edit-snmp"> Enable SNMP monitoring</label>
+
+                <label>
+                    <input type="checkbox"
+                           name="ping"
+                           id="edit-ping">
+                    Enable Ping monitoring
+                </label>
+
+                <label>
+                    <input type="checkbox"
+                           name="snmp"
+                           id="edit-snmp">
+                    Enable SNMP monitoring
+                </label>
+
             </div>
+
             <div class="modal-actions">
-                <button class="button" type="button" data-close-modal="edit-device-modal">Cancel</button>
-                <button class="button button-primary" type="submit">Save Changes</button>
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="edit-device-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Save Changes
+                </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
 
+
 <script>
+
 document.querySelectorAll('[data-open-modal]').forEach(function (button) {
+
     button.addEventListener('click', function () {
-        const modal = document.getElementById(button.dataset.openModal);
+
+        const modal =
+            document.getElementById(
+                button.dataset.openModal
+            );
+
         modal.classList.add('modal-open');
-        modal.setAttribute('aria-hidden', 'false');
+
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
     });
+
 });
+
 
 document.querySelectorAll('[data-close-modal]').forEach(function (button) {
+
     button.addEventListener('click', function () {
-        const modal = document.getElementById(button.dataset.closeModal);
-        modal.classList.remove('modal-open');
-        modal.setAttribute('aria-hidden', 'true');
+
+        const modal =
+            document.getElementById(
+                button.dataset.closeModal
+            );
+
+        modal.classList.remove(
+            'modal-open'
+        );
+
+        modal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
     });
+
 });
 
+
 document.querySelectorAll('[data-edit-network]').forEach(function (button) {
+
     button.addEventListener('click', function () {
-        const network = JSON.parse(button.dataset.editNetwork);
 
-        document.getElementById('edit-network-form').action =
-            '/configuration/networks/' + network.id + '/edit';
+        const network =
+            JSON.parse(
+                button.dataset.editNetwork
+            );
 
-        document.getElementById('edit-network-name').value =
+        document.getElementById(
+            'edit-network-form'
+        ).action =
+            '/configuration/networks/' +
+            network.id +
+            '/edit';
+
+        document.getElementById(
+            'edit-network-name'
+        ).value =
             network.name;
 
-        document.getElementById('edit-network-interface').value =
+        document.getElementById(
+            'edit-network-interface'
+        ).value =
             network.interface;
 
-        document.getElementById('edit-network-ip').value =
+        document.getElementById(
+            'edit-network-ip'
+        ).value =
             network.ip;
 
-        document.getElementById('edit-network-prefix').value =
+        document.getElementById(
+            'edit-network-prefix'
+        ).value =
             network.prefix;
 
-        document.getElementById('edit-network-gateway').value =
+        document.getElementById(
+            'edit-network-gateway'
+        ).value =
             network.gateway;
 
-        document.getElementById('edit-network-gateway-name').value =
+        document.getElementById(
+            'edit-network-gateway-name'
+        ).value =
             network.gateway_name || '';
 
-        document.getElementById('edit-network-dns1').value =
-            network.dns && network.dns.length > 0
+        document.getElementById(
+            'edit-network-dns1'
+        ).value =
+            network.dns &&
+            network.dns.length > 0
                 ? network.dns[0]
                 : '';
 
-        document.getElementById('edit-network-dns2').value =
-            network.dns && network.dns.length > 1
+        document.getElementById(
+            'edit-network-dns2'
+        ).value =
+            network.dns &&
+            network.dns.length > 1
                 ? network.dns[1]
                 : '';
 
-        const modal = document.getElementById('edit-network-modal');
+        const modal =
+            document.getElementById(
+                'edit-network-modal'
+            );
 
-        modal.classList.add('modal-open');
-        modal.setAttribute('aria-hidden', 'false');
+        modal.classList.add(
+            'modal-open'
+        );
+
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
     });
+
 });
+
 
 document.querySelectorAll('[data-edit-device]').forEach(function (button) {
+
     button.addEventListener('click', function () {
-        const device = JSON.parse(button.dataset.editDevice);
 
-        document.getElementById('edit-device-form').action =
-            '/configuration/devices/' + device.id + '/edit';
+        const device =
+            JSON.parse(
+                button.dataset.editDevice
+            );
 
-        document.getElementById('edit-name').value =
+        document.getElementById(
+            'edit-device-form'
+        ).action =
+            '/configuration/devices/' +
+            device.id +
+            '/edit';
+
+        document.getElementById(
+            'edit-name'
+        ).value =
             device.name;
 
-        document.getElementById('edit-ip').value =
+        document.getElementById(
+            'edit-ip'
+        ).value =
             device.ip;
 
-        document.getElementById('edit-network').value =
+        document.getElementById(
+            'edit-network'
+        ).value =
             device.network_id;
 
-        document.getElementById('edit-mode').value =
+        document.getElementById(
+            'edit-mode'
+        ).value =
             device.monitoring_mode;
 
-        document.getElementById('edit-ping').checked =
+        document.getElementById(
+            'edit-ping'
+        ).checked =
             device.ping;
 
-        document.getElementById('edit-snmp').checked =
+        document.getElementById(
+            'edit-snmp'
+        ).checked =
             device.snmp;
 
-        const modal = document.getElementById('edit-device-modal');
+        const modal =
+            document.getElementById(
+                'edit-device-modal'
+            );
 
-        modal.classList.add('modal-open');
-        modal.setAttribute('aria-hidden', 'false');
+        modal.classList.add(
+            'modal-open'
+        );
+
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
     });
+
 });
 
-document.addEventListener('keydown', function (event) {
-    if (event.key !== 'Escape') return;
 
-    document.querySelectorAll('.modal.modal-open').forEach(function (modal) {
-        modal.classList.remove('modal-open');
-        modal.setAttribute('aria-hidden', 'true');
-    });
-});
+document.addEventListener(
+    'keydown',
+    function (event) {
+
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        document.querySelectorAll(
+            '.modal.modal-open'
+        ).forEach(
+            function (modal) {
+
+                modal.classList.remove(
+                    'modal-open'
+                );
+
+                modal.setAttribute(
+                    'aria-hidden',
+                    'true'
+                );
+
+            }
+        );
+
+    }
+);
+
 </script>
+
 </body>
 </html>

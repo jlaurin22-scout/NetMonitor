@@ -178,6 +178,7 @@ def _render_configuration(page):
         ),
         networks=config.get_networks(),
         devices=_device_rows(),
+        settings=config.load_settings(),
     )
 
 
@@ -479,6 +480,100 @@ def remove_network(network_id):
         return redirect(
             url_for(
                 "configuration.networks",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route("/monitoring")
+def monitoring():
+
+    return _render_configuration(
+        "monitoring"
+    )
+
+
+@configuration.route(
+    "/monitoring/save",
+    methods=["POST"]
+)
+@admin_required
+def save_monitoring():
+
+    try:
+
+        gateway_interval = int(
+            request.form.get(
+                "gateway_interval",
+                "0"
+            )
+        )
+
+        internet_interval = int(
+            request.form.get(
+                "internet_interval",
+                "0"
+            )
+        )
+
+        dns_interval = int(
+            request.form.get(
+                "dns_interval",
+                "0"
+            )
+        )
+
+        device_interval = int(
+            request.form.get(
+                "device_interval",
+                "0"
+            )
+        )
+
+        intervals = [
+            gateway_interval,
+            internet_interval,
+            dns_interval,
+            device_interval
+        ]
+
+        if any(
+            interval < 1
+            for interval in intervals
+        ):
+
+            raise ValueError(
+                "Monitoring intervals must be at least 1 second."
+            )
+
+        config.update_monitoring_intervals(
+            gateway_interval,
+            internet_interval,
+            dns_interval,
+            device_interval
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Monitoring settings updated successfully."
+            if restarted
+            else
+            "Monitoring settings saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.monitoring",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.monitoring",
                 error=str(e)
             )
         )

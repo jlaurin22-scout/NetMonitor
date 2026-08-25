@@ -443,6 +443,24 @@ def save_settings(data):
         )
 
 
+def update_monitoring_intervals(
+    gateway_interval,
+    internet_interval,
+    dns_interval,
+    device_interval
+):
+
+    data = load_settings()
+
+    data["monitor"] = {
+        "gateway_interval": gateway_interval,
+        "internet_interval": internet_interval,
+        "dns_interval": dns_interval,
+        "device_interval": device_interval
+    }
+
+    save_settings(data)
+
 #
 # Combined configuration
 #
