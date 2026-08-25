@@ -461,6 +461,86 @@ def update_monitoring_intervals(
 
     save_settings(data)
 
+
+def get_internet_targets():
+
+    data = load_settings()
+
+    internet = data.setdefault(
+        "internet",
+        {}
+    )
+
+    targets = internet.setdefault(
+        "targets",
+        []
+    )
+
+    return targets
+
+
+def add_internet_target(ip):
+
+    validate_ip(ip)
+
+    data = load_settings()
+
+    internet = data.setdefault(
+        "internet",
+        {}
+    )
+
+    targets = internet.setdefault(
+        "targets",
+        []
+    )
+
+    if ip in targets:
+
+        raise Exception(
+            f"Internet target {ip} already exists."
+        )
+
+    targets.append(ip)
+
+    save_settings(data)
+
+    return ip
+
+
+def remove_internet_target(ip):
+
+    data = load_settings()
+
+    internet = data.setdefault(
+        "internet",
+        {}
+    )
+
+    targets = internet.setdefault(
+        "targets",
+        []
+    )
+
+    if ip not in targets:
+
+        raise Exception(
+            f"Internet target {ip} not found."
+        )
+
+    if len(targets) == 1:
+
+        raise Exception(
+            "At least one Internet target must exist."
+        )
+
+    targets.remove(ip)
+
+    save_settings(data)
+
+    return ip
+
+
 #
 # Combined configuration
 #

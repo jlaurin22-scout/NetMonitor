@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import subprocess
 
 from flask import (
@@ -58,6 +59,88 @@ def _restart_netmonitor():
     )
 
     return result.returncode == 0
+
+
+def _run_speed_test():
+
+    result = subprocess.run(
+        [
+            "/usr/bin/speedtest-cli",
+            "--json"
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120
+    )
+
+    if result.returncode != 0:
+
+        error = (
+            result.stderr.strip()
+            or
+            result.stdout.strip()
+            or
+            "Speed test failed."
+        )
+
+        raise Exception(error)
+
+    try:
+
+        data = json.loads(
+            result.stdout
+        )
+
+    except json.JSONDecodeError:
+
+        raise Exception(
+            "Speed test returned invalid data."
+        )
+
+    server = data.get(
+        "server",
+        {}
+    )
+
+    return {
+        "download": round(
+            data.get(
+                "download",
+                0
+            ) / 1000000,
+            2
+        ),
+        "upload": round(
+            data.get(
+                "upload",
+                0
+            ) / 1000000,
+            2
+        ),
+        "ping": round(
+            data.get(
+                "ping",
+                0
+            ),
+            2
+        ),
+        "server": server.get(
+            "name",
+            "Unknown"
+        ),
+        "country": server.get(
+            "country",
+            ""
+        ),
+        "sponsor": server.get(
+            "sponsor",
+            ""
+        ),
+        "timestamp": data.get(
+            "timestamp",
+            ""
+        ),
+    }
 
 
 def _device_rows():
@@ -179,6 +262,7 @@ def _render_configuration(page):
         networks=config.get_networks(),
         devices=_device_rows(),
         settings=config.load_settings(),
+        internet_targets=config.get_internet_targets(),
     )
 
 
@@ -574,6 +658,145 @@ def save_monitoring():
         return redirect(
             url_for(
                 "configuration.monitoring",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route("/internet")
+def internet():
+
+    return _render_configuration(
+        "internet"
+    )
+
+
+@configuration.route(
+    "/internet/targets/add",
+    methods=["POST"]
+)
+@admin_required
+def add_internet_target():
+
+    try:
+
+        ip = request.form.get(
+            "ip",
+            ""
+        ).strip()
+
+        config.add_internet_target(
+            ip
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Internet target added successfully."
+            if restarted
+            else
+            "Internet target saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.internet",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.internet",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/internet/targets/<path:ip>/remove",
+    methods=["POST"]
+)
+@admin_required
+def remove_internet_target(ip):
+
+    try:
+
+        config.remove_internet_target(
+            ip
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Internet target removed successfully."
+            if restarted
+            else
+            "Internet target removed. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.internet",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.internet",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/internet/speedtest",
+    methods=["POST"]
+)
+@admin_required
+def internet_speedtest():
+
+    try:
+
+        result = _run_speed_test()
+
+        return render_template(
+            "configuration.html",
+            page="internet",
+            customer=config.load_customer().get(
+                "customer",
+                "Unknown"
+            ),
+            address=config.load_customer().get(
+                "address",
+                ""
+            ),
+            networks=config.get_networks(),
+            devices=_device_rows(),
+            settings=config.load_settings(),
+            internet_targets=config.get_internet_targets(),
+            speedtest=result,
+        )
+
+    except subprocess.TimeoutExpired:
+
+        return redirect(
+            url_for(
+                "configuration.internet",
+                error="Internet speed test timed out."
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.internet",
                 error=str(e)
             )
         )
