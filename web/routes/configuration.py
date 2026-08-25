@@ -156,6 +156,63 @@ def index():
     )
 
 
+@configuration.route("/customer")
+def customer():
+
+    customer = config.load_customer()
+
+    return render_template(
+        "configuration.html",
+        page="customer",
+        customer=customer.get(
+            "customer",
+            ""
+        ),
+        address=customer.get(
+            "address",
+            ""
+        ),
+        networks=config.get_networks(),
+        devices=_device_rows(),
+    )
+
+
+@configuration.route("/customer/save", methods=["POST"])
+@admin_required
+def save_customer():
+
+    customer = request.form.get(
+        "customer",
+        ""
+    ).strip()
+
+    address = request.form.get(
+        "address",
+        ""
+    ).strip()
+
+    if not customer:
+
+        return redirect(
+            url_for(
+                "configuration.customer",
+                error="Customer name cannot be empty."
+            )
+        )
+
+    config.update_customer(
+        customer,
+        address
+    )
+
+    return redirect(
+        url_for(
+            "configuration.customer",
+            message="Customer information updated successfully."
+        )
+    )
+
+
 @configuration.route("/devices")
 def devices():
 

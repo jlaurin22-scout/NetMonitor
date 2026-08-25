@@ -47,17 +47,17 @@
             </div>
         </div>
         <div class="configuration-grid">
-            <a class="configuration-card" href="#">
+            <a class="configuration-card {% if page == 'customer' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.customer') }}">
                 <strong>Customer</strong>
                 <span>Customer information and address</span>
-                <small>Coming next</small>
+                <small>Open configuration →</small>
             </a>
             <a class="configuration-card" href="#">
                 <strong>Networks</strong>
                 <span>LAN, WAN and monitored network interfaces</span>
                 <small>Coming next</small>
             </a>
-            <a class="configuration-card configuration-card-active" href="{{ url_for('configuration.devices') }}">
+            <a class="configuration-card {% if page == 'devices' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.devices') }}">
                 <strong>Devices</strong>
                 <span>Monitored devices and monitoring policy</span>
                 <small>Open configuration →</small>
@@ -84,6 +84,57 @@
             </a>
         </div>
     </section>
+
+    {% if page == 'customer' %}
+    <section class="card configuration-section">
+        <div class="section-heading">
+            <div>
+                <h2>Customer</h2>
+                <p>Configure customer information and site address</p>
+            </div>
+        </div>
+
+        {% if request.args.get('message') %}
+        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        {% endif %}
+
+        {% if request.args.get('error') %}
+        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        {% endif %}
+
+        {% if current_user.role == 'admin' %}
+        <form method="post" action="{{ url_for('configuration.save_customer') }}">
+            <div class="form-grid">
+                <label>
+                    Customer
+                    <input name="customer" value="{{ customer }}" required>
+                </label>
+                <label>
+                    Address
+                    <input name="address" value="{{ address }}">
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="button" type="button" onclick="window.location.href='{{ url_for('configuration.index') }}'">Cancel</button>
+                <button class="button button-primary" type="submit">Save Changes</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="form-grid">
+            <label>
+                Customer
+                <input value="{{ customer }}" disabled>
+            </label>
+            <label>
+                Address
+                <input value="{{ address }}" disabled>
+            </label>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
     {% if page == 'devices' %}
     <section class="card configuration-section">
         <div class="section-heading">
