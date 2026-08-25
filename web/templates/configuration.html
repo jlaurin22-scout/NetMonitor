@@ -52,10 +52,10 @@
                 <span>Customer information and address</span>
                 <small>Open configuration →</small>
             </a>
-            <a class="configuration-card" href="#">
+            <a class="configuration-card {% if page == 'networks' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.networks') }}">
                 <strong>Networks</strong>
                 <span>LAN, WAN and monitored network interfaces</span>
-                <small>Coming next</small>
+                <small>Open configuration →</small>
             </a>
             <a class="configuration-card {% if page == 'devices' %}configuration-card-active{% endif %}" href="{{ url_for('configuration.devices') }}">
                 <strong>Devices</strong>
@@ -135,6 +135,86 @@
     </section>
     {% endif %}
 
+    {% if page == 'networks' %}
+    <section class="card configuration-section">
+        <div class="section-heading">
+            <div>
+                <h2>Networks</h2>
+                <p>Configure monitored network interfaces, gateways and DNS servers</p>
+            </div>
+            {% if current_user.role == 'admin' %}
+            <button class="button button-primary" type="button" data-open-modal="add-network-modal">+ Add Network</button>
+            {% endif %}
+        </div>
+
+        {% if request.args.get('message') %}
+        <div class="alert alert-success">{{ request.args.get('message') }}</div>
+        {% endif %}
+
+        {% if request.args.get('error') %}
+        <div class="alert alert-error">{{ request.args.get('error') }}</div>
+        {% endif %}
+
+        {% if not networks %}
+        <div class="empty-state">
+            <span class="empty-check">✓</span>
+            <div>
+                <strong>No networks configured</strong>
+                <p>Add a network to begin monitoring it.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="configuration-table-wrap">
+            <table class="configuration-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Interface</th>
+                        <th>IP Address</th>
+                        <th>Prefix</th>
+                        <th>Gateway</th>
+                        <th>Router / Firewall</th>
+                        <th>DNS</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for network in networks %}
+                    <tr>
+                        <td>{{ network.id }}</td>
+                        <td class="table-name">{{ network.name }}</td>
+                        <td>{{ network.interface }}</td>
+                        <td>{{ network.ip }}</td>
+                        <td>/{{ network.prefix }}</td>
+                        <td>{{ network.gateway }}</td>
+                        <td>{{ network.gateway_name }}</td>
+                        <td>
+                            {% for dns in network.dns %}
+                                {% if dns %}
+                                <div>{{ dns }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="table-actions">
+                            {% if current_user.role == 'admin' %}
+                            <button class="button button-small" type="button" data-edit-network='{{ network | tojson }}'>Edit</button>
+                            <form method="post" action="{{ url_for('configuration.remove_network', network_id=network.id) }}" onsubmit="return confirm('Remove {{ network.name | e }}?');">
+                                <button class="button button-small button-danger" type="submit">Remove</button>
+                            </form>
+                            {% else %}
+                            <span class="viewer-label">View only</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
     {% if page == 'devices' %}
     <section class="card configuration-section">
         <div class="section-heading">
@@ -146,12 +226,15 @@
             <button class="button button-primary" type="button" data-open-modal="add-device-modal">+ Add Device</button>
             {% endif %}
         </div>
+
         {% if request.args.get('message') %}
         <div class="alert alert-success">{{ request.args.get('message') }}</div>
         {% endif %}
+
         {% if request.args.get('error') %}
         <div class="alert alert-error">{{ request.args.get('error') }}</div>
         {% endif %}
+
         {% if not devices %}
         <div class="empty-state">
             <span class="empty-check">✓</span>
@@ -227,6 +310,117 @@
     </section>
     {% endif %}
 </main>
+
+<div class="modal" id="add-network-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="add-network-modal"></div>
+    <div class="modal-panel">
+        <div class="modal-heading">
+            <div>
+                <h2>Add Network</h2>
+                <p>Add a monitored network interface</p>
+            </div>
+            <button class="modal-close" type="button" data-close-modal="add-network-modal">×</button>
+        </div>
+
+        <form method="post" action="{{ url_for('configuration.add_network') }}">
+            <div class="form-grid">
+                <label>
+                    Network Name
+                    <input name="name" required>
+                </label>
+                <label>
+                    Interface
+                    <input name="interface" required>
+                </label>
+                <label>
+                    IP Address
+                    <input name="ip" required>
+                </label>
+                <label>
+                    Prefix
+                    <input name="prefix" type="number" min="1" max="32" required>
+                </label>
+                <label>
+                    Gateway
+                    <input name="gateway" required>
+                </label>
+                <label>
+                    Router / Firewall
+                    <input name="gateway_name" required>
+                </label>
+                <label>
+                    Primary DNS
+                    <input name="dns1">
+                </label>
+                <label>
+                    Secondary DNS
+                    <input name="dns2">
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="button" type="button" data-close-modal="add-network-modal">Cancel</button>
+                <button class="button button-primary" type="submit">Add Network</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="edit-network-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="edit-network-modal"></div>
+    <div class="modal-panel">
+        <div class="modal-heading">
+            <div>
+                <h2>Edit Network</h2>
+                <p>Update monitored network configuration</p>
+            </div>
+            <button class="modal-close" type="button" data-close-modal="edit-network-modal">×</button>
+        </div>
+
+        <form method="post" id="edit-network-form" action="">
+            <div class="form-grid">
+                <label>
+                    Network Name
+                    <input name="name" id="edit-network-name" required>
+                </label>
+                <label>
+                    Interface
+                    <input name="interface" id="edit-network-interface" required>
+                </label>
+                <label>
+                    IP Address
+                    <input name="ip" id="edit-network-ip" required>
+                </label>
+                <label>
+                    Prefix
+                    <input name="prefix" id="edit-network-prefix" type="number" min="1" max="32" required>
+                </label>
+                <label>
+                    Gateway
+                    <input name="gateway" id="edit-network-gateway" required>
+                </label>
+                <label>
+                    Router / Firewall
+                    <input name="gateway_name" id="edit-network-gateway-name" required>
+                </label>
+                <label>
+                    Primary DNS
+                    <input name="dns1" id="edit-network-dns1">
+                </label>
+                <label>
+                    Secondary DNS
+                    <input name="dns2" id="edit-network-dns2">
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="button" type="button" data-close-modal="edit-network-modal">Cancel</button>
+                <button class="button button-primary" type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="modal" id="add-device-modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-modal="add-device-modal"></div>
     <div class="modal-panel">
@@ -255,6 +449,7 @@
         </form>
     </div>
 </div>
+
 <div class="modal" id="edit-device-modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-modal="edit-device-modal"></div>
     <div class="modal-panel">
@@ -283,6 +478,7 @@
         </form>
     </div>
 </div>
+
 <script>
 document.querySelectorAll('[data-open-modal]').forEach(function (button) {
     button.addEventListener('click', function () {
@@ -291,6 +487,7 @@ document.querySelectorAll('[data-open-modal]').forEach(function (button) {
         modal.setAttribute('aria-hidden', 'false');
     });
 });
+
 document.querySelectorAll('[data-close-modal]').forEach(function (button) {
     button.addEventListener('click', function () {
         const modal = document.getElementById(button.dataset.closeModal);
@@ -298,23 +495,84 @@ document.querySelectorAll('[data-close-modal]').forEach(function (button) {
         modal.setAttribute('aria-hidden', 'true');
     });
 });
-document.querySelectorAll('[data-edit-device]').forEach(function (button) {
+
+document.querySelectorAll('[data-edit-network]').forEach(function (button) {
     button.addEventListener('click', function () {
-        const device = JSON.parse(button.dataset.editDevice);
-        document.getElementById('edit-device-form').action = '/configuration/devices/' + device.id + '/edit';
-        document.getElementById('edit-name').value = device.name;
-        document.getElementById('edit-ip').value = device.ip;
-        document.getElementById('edit-network').value = device.network_id;
-        document.getElementById('edit-mode').value = device.monitoring_mode;
-        document.getElementById('edit-ping').checked = device.ping;
-        document.getElementById('edit-snmp').checked = device.snmp;
-        const modal = document.getElementById('edit-device-modal');
+        const network = JSON.parse(button.dataset.editNetwork);
+
+        document.getElementById('edit-network-form').action =
+            '/configuration/networks/' + network.id + '/edit';
+
+        document.getElementById('edit-network-name').value =
+            network.name;
+
+        document.getElementById('edit-network-interface').value =
+            network.interface;
+
+        document.getElementById('edit-network-ip').value =
+            network.ip;
+
+        document.getElementById('edit-network-prefix').value =
+            network.prefix;
+
+        document.getElementById('edit-network-gateway').value =
+            network.gateway;
+
+        document.getElementById('edit-network-gateway-name').value =
+            network.gateway_name || '';
+
+        document.getElementById('edit-network-dns1').value =
+            network.dns && network.dns.length > 0
+                ? network.dns[0]
+                : '';
+
+        document.getElementById('edit-network-dns2').value =
+            network.dns && network.dns.length > 1
+                ? network.dns[1]
+                : '';
+
+        const modal = document.getElementById('edit-network-modal');
+
         modal.classList.add('modal-open');
         modal.setAttribute('aria-hidden', 'false');
     });
 });
+
+document.querySelectorAll('[data-edit-device]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const device = JSON.parse(button.dataset.editDevice);
+
+        document.getElementById('edit-device-form').action =
+            '/configuration/devices/' + device.id + '/edit';
+
+        document.getElementById('edit-name').value =
+            device.name;
+
+        document.getElementById('edit-ip').value =
+            device.ip;
+
+        document.getElementById('edit-network').value =
+            device.network_id;
+
+        document.getElementById('edit-mode').value =
+            device.monitoring_mode;
+
+        document.getElementById('edit-ping').checked =
+            device.ping;
+
+        document.getElementById('edit-snmp').checked =
+            device.snmp;
+
+        const modal = document.getElementById('edit-device-modal');
+
+        modal.classList.add('modal-open');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+});
+
 document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
+
     document.querySelectorAll('.modal.modal-open').forEach(function (modal) {
         modal.classList.remove('modal-open');
         modal.setAttribute('aria-hidden', 'true');

@@ -45,6 +45,23 @@ def _restart_monitoring():
     return result.returncode == 0
 
 
+def _restart_netmonitor():
+
+    result = subprocess.run(
+        [
+            "/usr/bin/sudo",
+            "-n",
+            "/usr/bin/systemctl",
+            "restart",
+            "netmonitor"
+        ],
+        capture_output=True,
+        text=True
+    )
+
+    return result.returncode == 0
+
+
 def _device_rows():
 
     devices = config.get_devices()
@@ -135,14 +152,24 @@ def _find_device(device_id):
     return None
 
 
-@configuration.route("/")
-def index():
+def _find_network(network_id):
+
+    for network in config.get_networks():
+
+        if network["id"] == network_id:
+
+            return network
+
+    return None
+
+
+def _render_configuration(page):
 
     customer = config.load_customer()
 
     return render_template(
         "configuration.html",
-        page="configuration",
+        page=page,
         customer=customer.get(
             "customer",
             "Unknown"
@@ -156,24 +183,19 @@ def index():
     )
 
 
+@configuration.route("/")
+def index():
+
+    return _render_configuration(
+        "configuration"
+    )
+
+
 @configuration.route("/customer")
 def customer():
 
-    customer = config.load_customer()
-
-    return render_template(
-        "configuration.html",
-        page="customer",
-        customer=customer.get(
-            "customer",
-            ""
-        ),
-        address=customer.get(
-            "address",
-            ""
-        ),
-        networks=config.get_networks(),
-        devices=_device_rows(),
+    return _render_configuration(
+        "customer"
     )
 
 
@@ -213,24 +235,262 @@ def save_customer():
     )
 
 
+@configuration.route("/networks")
+def networks():
+
+    return _render_configuration(
+        "networks"
+    )
+
+
+@configuration.route("/networks/add", methods=["POST"])
+@admin_required
+def add_network():
+
+    try:
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        interface = request.form.get(
+            "interface",
+            ""
+        ).strip()
+
+        ip = request.form.get(
+            "ip",
+            ""
+        ).strip()
+
+        prefix = int(
+            request.form.get(
+                "prefix",
+                "0"
+            )
+        )
+
+        gateway = request.form.get(
+            "gateway",
+            ""
+        ).strip()
+
+        gateway_name = request.form.get(
+            "gateway_name",
+            ""
+        ).strip()
+
+        dns1 = request.form.get(
+            "dns1",
+            ""
+        ).strip()
+
+        dns2 = request.form.get(
+            "dns2",
+            ""
+        ).strip()
+
+        config.add_network(
+            name,
+            interface,
+            ip,
+            prefix,
+            gateway,
+            gateway_name,
+            [
+                dns1,
+                dns2
+            ]
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Network added successfully."
+            if restarted
+            else
+            "Network saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/networks/<int:network_id>/edit",
+    methods=["POST"]
+)
+@admin_required
+def edit_network(network_id):
+
+    selected = _find_network(
+        network_id
+    )
+
+    if selected is None:
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                error="Network not found."
+            )
+        )
+
+    try:
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        interface = request.form.get(
+            "interface",
+            ""
+        ).strip()
+
+        ip = request.form.get(
+            "ip",
+            ""
+        ).strip()
+
+        prefix = int(
+            request.form.get(
+                "prefix",
+                "0"
+            )
+        )
+
+        gateway = request.form.get(
+            "gateway",
+            ""
+        ).strip()
+
+        gateway_name = request.form.get(
+            "gateway_name",
+            ""
+        ).strip()
+
+        dns1 = request.form.get(
+            "dns1",
+            ""
+        ).strip()
+
+        dns2 = request.form.get(
+            "dns2",
+            ""
+        ).strip()
+
+        config.update_network(
+            network_id,
+            name,
+            interface,
+            ip,
+            prefix,
+            gateway,
+            gateway_name,
+            [
+                dns1,
+                dns2
+            ]
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Network updated successfully."
+            if restarted
+            else
+            "Network saved. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/networks/<int:network_id>/remove",
+    methods=["POST"]
+)
+@admin_required
+def remove_network(network_id):
+
+    selected = _find_network(
+        network_id
+    )
+
+    if selected is None:
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                error="Network not found."
+            )
+        )
+
+    try:
+
+        config.remove_network(
+            network_id
+        )
+
+        restarted = _restart_netmonitor()
+
+        message = (
+            "Network removed successfully."
+            if restarted
+            else
+            "Network removed. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.networks",
+                error=str(e)
+            )
+        )
+
+
 @configuration.route("/devices")
 def devices():
 
-    customer = config.load_customer()
-
-    return render_template(
-        "configuration.html",
-        page="devices",
-        customer=customer.get(
-            "customer",
-            "Unknown"
-        ),
-        address=customer.get(
-            "address",
-            ""
-        ),
-        networks=config.get_networks(),
-        devices=_device_rows(),
+    return _render_configuration(
+        "devices"
     )
 
 
