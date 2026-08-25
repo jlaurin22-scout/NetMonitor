@@ -61,9 +61,8 @@ def help_menu():
         print("6) Customer Report")
         print()
 
-        print("7) Devices")
-        print("8) Configuration")
-        print("9) Service")
+        print("7) Configuration")
+        print("8) Service")
         print("V) Version")
         print("R) Reset")
         print()
@@ -142,16 +141,10 @@ def help_menu():
         elif choice == "7":
 
             os.system("clear")
-            device_menu()
-            continue
-
-        elif choice == "8":
-
-            os.system("clear")
             configuration_menu()
             continue
 
-        elif choice == "9":
+        elif choice == "8":
 
             os.system("clear")
             service()
@@ -172,7 +165,7 @@ def help_menu():
             os.system("clear")
             return
 
-        if choice not in ("3", "4", "6", "7", "8", "q"):
+        if choice not in ("3", "4", "6", "7", "q"):
 
             input("\nPress Enter to continue...")
 
@@ -551,7 +544,8 @@ def configuration_menu():
         print("1) Customer")
         print("2) Address")
         print("3) Networks")
-        print("4) Notifications")
+        print("4) Devices")
+        print("5) Notifications")
         print()
         print("B) Back")
         print()
@@ -579,6 +573,12 @@ def configuration_menu():
             continue
 
         elif choice == "4":
+
+            os.system("clear")
+            device_menu()
+            continue
+
+        elif choice == "5":
 
             os.system("clear")
             notifications_menu()
