@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Scout Network Monitor — Events
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Scout Network Monitor
+        </div>
+
+        <div class="brand-site">
+
+            {{ customer }}
+
+            {% if address %}
+
+                <span class="separator">
+                    —
+                </span>
+
+                {{ address }}
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="account-area">
+
+        <span class="account-user">
+            {{ current_user.username }}
+        </span>
+
+        <span class="account-role">
+            {{ current_user.role|upper }}
+        </span>
+
+        <a
+            class="account-logout"
+            href="{{ url_for('auth.logout') }}"
+        >
+            Logout
+        </a>
+
+    </div>
+
+
+    <div class="service-area">
+
+        <div class="service-indicator">
+
+            <span
+                class="
+                    status-dot
+                    dot-up
+                "
+            ></span>
+
+            <span class="service-label">
+                Monitoring
+            </span>
+
+        </div>
+
+        <div class="last-updated">
+            Event History
+        </div>
+
+    </div>
+
+</header>
+
+
+<nav class="navigation">
+
+    <a href="/">
+        Dashboard
+    </a>
+
+    <a href="/configuration">
+        Configuration
+    </a>
+
+    <a
+        href="/events/"
+        class="active"
+    >
+        Events
+    </a>
+
+    <a href="/incidents/">
+        Incidents
+    </a>
+
+    <a href="#">
+        Reports
+    </a>
+
+</nav>
+
+
+<main class="dashboard">
+
+
+    <section class="card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <h2>
+                    Recent Events
+                </h2>
+
+                <p>
+                    Latest monitoring state changes
+                </p>
+
+            </div>
+
+            <div>
+
+                {{ events|length }}
+
+                event{% if events|length != 1 %}s{% endif %}
+
+            </div>
+
+        </div>
+
+
+        {% if events %}
+
+
+        <div
+            style="
+                overflow-x: auto;
+            "
+        >
+
+            <table
+                style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 13px;
+                "
+            >
+
+                <thead>
+
+                    <tr
+                        style="
+                            border-bottom:
+                                2px solid #e9ecef;
+                            text-align: left;
+                        "
+                    >
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                                white-space:
+                                    nowrap;
+                            "
+                        >
+                            Time
+                        </th>
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                            "
+                        >
+                            State
+                        </th>
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                            "
+                        >
+                            Name
+                        </th>
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                            "
+                        >
+                            Type
+                        </th>
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                            "
+                        >
+                            Message
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for event in events %}
+
+                    <tr
+                        style="
+                            border-bottom:
+                                1px solid #e9ecef;
+                        "
+                    >
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                                white-space:
+                                    nowrap;
+                                color:
+                                    #6c757d;
+                            "
+                        >
+                            {{ event.timestamp }}
+                        </td>
+
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                                white-space:
+                                    nowrap;
+                                font-weight:
+                                    700;
+                            "
+                        >
+
+                            {% if event.state == "UP" %}
+
+                                <span
+                                    class="state-up"
+                                >
+                                    ● UP
+                                </span>
+
+                            {% else %}
+
+                                <span
+                                    class="state-down"
+                                >
+                                    ● DOWN
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                                font-weight:
+                                    600;
+                            "
+                        >
+                            {{ event.name }}
+                        </td>
+
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                                color:
+                                    #6c757d;
+                            "
+                        >
+                            {{ event.job_type }}
+                        </td>
+
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                                color:
+                                    #495057;
+                            "
+                        >
+                            {{ event.message }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        {% else %}
+
+
+        <div class="empty-state">
+
+            <span class="empty-check">
+                ✓
+            </span>
+
+            <div>
+
+                <strong>
+                    No events recorded
+                </strong>
+
+                <p>
+                    No monitoring events have been recorded yet.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+</main>
+
+
+<footer class="footer">
+
+    Scout Network Monitor
+
+</footer>
+
+
+</body>
+
+</html>

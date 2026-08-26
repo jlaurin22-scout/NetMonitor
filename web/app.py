@@ -53,6 +53,7 @@ def create_app():
     from web.routes.auth import auth_routes
     from web.routes.configuration import configuration
     from web.routes.incidents import incidents
+    from web.routes.events import events
 
     app.register_blueprint(
         dashboard
@@ -72,6 +73,10 @@ def create_app():
 
     app.register_blueprint(
         incidents
+    )
+
+    app.register_blueprint(
+        events
     )
 
     app.jinja_env.globals[
