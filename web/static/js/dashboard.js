@@ -23,6 +23,7 @@ async function updateDashboard() {
         updateService(data);
         updateNetworks(data);
         updateDevices(data);
+        updateIncidents(data);
 
         updateTimestamp();
 
@@ -51,9 +52,9 @@ function updateHealth(data) {
 
     }
 
-    const dot =
+    const healthValue =
         element.querySelector(
-            ".health-dot"
+            ".health-value"
         );
 
     const label =
@@ -61,21 +62,24 @@ function updateHealth(data) {
             ".health-label"
         );
 
-    element.classList.remove(
+    if (!healthValue || !label) {
+
+        return;
+
+    }
+
+    healthValue.classList.remove(
         "state-up",
         "state-down",
         "state-warning"
     );
 
-    element.classList.add(
+    healthValue.classList.add(
         data.health.class
     );
 
     label.textContent =
         data.health.label;
-
-    dot.className =
-        "health-dot";
 
 }
 
@@ -103,20 +107,28 @@ function updateService(data) {
             ".service-label"
         );
 
-    label.textContent =
-        "Monitoring " +
-        data.service.state;
+    if (label) {
 
-    dot.classList.remove(
-        "dot-up",
-        "dot-down"
-    );
+        label.textContent =
+            "Monitoring " +
+            data.service.state;
 
-    dot.classList.add(
-        data.service.up
-            ? "dot-up"
-            : "dot-down"
-    );
+    }
+
+    if (dot) {
+
+        dot.classList.remove(
+            "dot-up",
+            "dot-down"
+        );
+
+        dot.classList.add(
+            data.service.up
+                ? "dot-up"
+                : "dot-down"
+        );
+
+    }
 
 }
 
@@ -144,21 +156,26 @@ function updateNetworks(data) {
                 ".network-state"
             );
 
-        state.textContent =
-            network.healthy
-                ? "HEALTHY"
-                : "ATTENTION";
+        if (state) {
 
-        state.classList.remove(
-            "state-up",
-            "state-warning"
-        );
+            state.textContent =
+                network.healthy
+                    ? "HEALTHY"
+                    : "ATTENTION";
 
-        state.classList.add(
-            network.healthy
-                ? "state-up"
-                : "state-warning"
-        );
+            state.classList.remove(
+                "state-up",
+                "state-warning",
+                "state-down"
+            );
+
+            state.classList.add(
+                network.healthy
+                    ? "state-up"
+                    : "state-warning"
+            );
+
+        }
 
         updateCheck(
             card,
@@ -216,17 +233,22 @@ function updateCheck(
             ".status-dot"
         );
 
-    const text =
-        state.querySelector(
-            ".check-state-text"
+    state.textContent =
+        "";
+
+    if (dot) {
+
+        state.appendChild(
+            dot
         );
 
-    if (text) {
-
-        text.textContent =
-            value;
-
     }
+
+    state.appendChild(
+        document.createTextNode(
+            value
+        )
+    );
 
     state.classList.remove(
         "state-up",
@@ -432,6 +454,269 @@ function updateDevices(data) {
         );
 
     }
+
+}
+
+
+function updateIncidents(data) {
+
+    const list =
+        document.getElementById(
+            "incident-list"
+        );
+
+    const empty =
+        document.getElementById(
+            "incident-empty"
+        );
+
+    if (!list || !empty) {
+
+        return;
+
+    }
+
+    list.innerHTML = "";
+
+    if (
+        !data.incidents
+        ||
+        data.incidents.length === 0
+    ) {
+
+        list.style.display = "none";
+        empty.style.display = "flex";
+
+        return;
+
+    }
+
+    list.style.display = "block";
+    empty.style.display = "none";
+
+    for (
+        const incident
+        of data.incidents
+    ) {
+
+        const item =
+            document.createElement(
+                "div"
+            );
+
+        item.className =
+            "incident-item";
+
+        const primary =
+            incident.primary;
+
+        const header =
+            document.createElement(
+                "div"
+            );
+
+        header.className =
+            "incident-header";
+
+        const title =
+            document.createElement(
+                "strong"
+            );
+
+        title.textContent =
+            primary
+                ? primary.object
+                : "Network incident";
+
+        const duration =
+            document.createElement(
+                "span"
+            );
+
+        duration.textContent =
+            formatDuration(
+                incident.duration
+            );
+
+        header.appendChild(
+            title
+        );
+
+        header.appendChild(
+            duration
+        );
+
+        item.appendChild(
+            header
+        );
+
+        if (primary) {
+
+            const details =
+                document.createElement(
+                    "div"
+                );
+
+            details.className =
+                "incident-details";
+
+            details.appendChild(
+                createIncidentDetail(
+                    "Type",
+                    primary.job_type
+                )
+            );
+
+            details.appendChild(
+                createIncidentDetail(
+                    "Network",
+                    primary.network || "Unknown"
+                )
+            );
+
+            details.appendChild(
+                createIncidentDetail(
+                    "Confidence",
+                    primary.confidence
+                )
+            );
+
+            item.appendChild(
+                details
+            );
+
+        }
+
+        if (
+            incident.dependents
+            &&
+            incident.dependents.length
+        ) {
+
+            const dependents =
+                document.createElement(
+                    "div"
+                );
+
+            dependents.className =
+                "incident-impact";
+
+            const label =
+                document.createElement(
+                    "strong"
+                );
+
+            label.textContent =
+                "Impact: ";
+
+            dependents.appendChild(
+                label
+            );
+
+            dependents.appendChild(
+                document.createTextNode(
+                    incident.dependents
+                        .map(
+                            item =>
+                                item.object
+                        )
+                        .join(
+                            ", "
+                        )
+                )
+            );
+
+            item.appendChild(
+                dependents
+            );
+
+        }
+
+        if (incident.diagnosis) {
+
+            const diagnosis =
+                document.createElement(
+                    "p"
+                );
+
+            diagnosis.className =
+                "incident-diagnosis";
+
+            diagnosis.textContent =
+                incident.diagnosis;
+
+            item.appendChild(
+                diagnosis
+            );
+
+        }
+
+        list.appendChild(
+            item
+        );
+
+    }
+
+}
+
+
+function createIncidentDetail(
+    label,
+    value
+) {
+
+    const span =
+        document.createElement(
+            "span"
+        );
+
+    span.textContent =
+        label +
+        ": " +
+        value;
+
+    return span;
+
+}
+
+
+function formatDuration(
+    seconds
+) {
+
+    if (
+        seconds === null
+        ||
+        seconds === undefined
+    ) {
+
+        return "Active";
+
+    }
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+    const remainingSeconds =
+        seconds % 60;
+
+    if (minutes) {
+
+        return (
+            minutes +
+            "m " +
+            remainingSeconds +
+            "s"
+        );
+
+    }
+
+    return (
+        remainingSeconds +
+        "s"
+    );
 
 }
 

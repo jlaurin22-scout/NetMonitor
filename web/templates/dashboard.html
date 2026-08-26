@@ -419,7 +419,77 @@
         </div>
 
 
-        <div class="empty-state">
+        <div
+            class="incident-list"
+            id="incident-list"
+            {% if not active_incidents %}
+                style="display: none;"
+            {% endif %}
+        >
+
+            {% for incident in active_incidents %}
+
+            <div class="incident-item">
+
+                <div class="incident-header">
+
+                    <strong>
+                        {{ incident.primary.object
+                           if incident.primary
+                           else "Network incident" }}
+                    </strong>
+
+                    <span>
+                        {{ incident.duration }}s
+                    </span>
+
+                </div>
+
+                {% if incident.primary %}
+
+                <div class="incident-details">
+
+                    <span>
+                        Type:
+                        {{ incident.primary.job_type }}
+                    </span>
+
+                    <span>
+                        Network:
+                        {{ incident.primary.network or "Unknown" }}
+                    </span>
+
+                    <span>
+                        Confidence:
+                        {{ incident.primary.confidence }}
+                    </span>
+
+                </div>
+
+                {% endif %}
+
+                {% if incident.diagnosis %}
+
+                <p class="incident-diagnosis">
+                    {{ incident.diagnosis }}
+                </p>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div
+            class="empty-state"
+            id="incident-empty"
+            {% if active_incidents %}
+                style="display: none;"
+            {% endif %}
+        >
 
             <span class="empty-check">
                 ✓

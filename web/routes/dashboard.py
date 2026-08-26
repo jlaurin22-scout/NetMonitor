@@ -222,6 +222,30 @@ def is_standby_device(row, standby_devices):
     )
 
 
+def get_active_incidents(
+    incidents
+):
+
+    active = []
+
+    for incident in incidents:
+
+        episodes = incident.get(
+            "episodes",
+            []
+        )
+
+        if any(
+            episode.get("end") is None
+            for episode in episodes
+        ):
+
+            active.append(
+                incident
+            )
+
+    return active
+
 def overall_health(
     service_up,
     rows
@@ -315,6 +339,12 @@ def index():
         rows
     )
 
+    incidents = database.get_incidents()
+
+    active_incidents = get_active_incidents(
+        incidents
+    )
+
     device_rows = [
         row
         for row in rows
@@ -354,4 +384,5 @@ def index():
         down_devices=down_devices,
         standby_count=standby_count,
         devices=device_rows[:8],
+        active_incidents=active_incidents,
     )
