@@ -263,18 +263,6 @@ def add_device(
                 f"IP address {ip} is already monitored."
             )
 
-        if (
-            existing.get("network_id", 1)
-            == network_id
-            and
-            existing["name"].lower()
-            == name.lower()
-        ):
-
-            raise Exception(
-                f'Device name "{name}" already exists.'
-            )
-
     next_id = 1
 
     if devices:
