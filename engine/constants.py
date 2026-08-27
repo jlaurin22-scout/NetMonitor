@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-VERSION = "0.5.0"
-BUILD = "dev1"
+VERSION = "1.0.0"
+BUILD = "release"
 CODENAME = "Console"
 
 JOB_GATEWAY = "gateway"
