@@ -757,12 +757,50 @@ def save_notifications():
             ""
         ).strip()
 
+        location = request.form.get(
+            "location",
+            ""
+        ).strip()
+
+        notify_startup = (
+            request.form.get(
+                "notify_startup"
+            )
+            == "on"
+        )
+
+        notify_incidents = (
+            request.form.get(
+                "notify_incidents"
+            )
+            == "on"
+        )
+
+        notify_recoveries = (
+            request.form.get(
+                "notify_recoveries"
+            )
+            == "on"
+        )
+
+        notify_network_changes = (
+            request.form.get(
+                "notify_network_changes"
+            )
+            == "on"
+        )
+
         config.update_ntfy_settings(
             enabled,
             server,
             topic,
             token,
-            name
+            name,
+            location,
+            notify_startup,
+            notify_incidents,
+            notify_recoveries,
+            notify_network_changes
         )
 
         restarted = _restart_netmonitor()
@@ -827,12 +865,50 @@ def test_notifications():
             ""
         ).strip()
 
+        location = request.form.get(
+            "location",
+            ""
+        ).strip()
+
+        notify_startup = (
+            request.form.get(
+                "notify_startup"
+            )
+            == "on"
+        )
+
+        notify_incidents = (
+            request.form.get(
+                "notify_incidents"
+            )
+            == "on"
+        )
+
+        notify_recoveries = (
+            request.form.get(
+                "notify_recoveries"
+            )
+            == "on"
+        )
+
+        notify_network_changes = (
+            request.form.get(
+                "notify_network_changes"
+            )
+            == "on"
+        )
+
         config.update_ntfy_settings(
             enabled,
             server,
             topic,
             token,
-            name
+            name,
+            location,
+            notify_startup,
+            notify_incidents,
+            notify_recoveries,
+            notify_network_changes
         )
 
         config.test_ntfy(
@@ -857,6 +933,7 @@ def test_notifications():
                 error=str(e)
             )
         )
+
 
 @configuration.route("/internet")
 def internet():

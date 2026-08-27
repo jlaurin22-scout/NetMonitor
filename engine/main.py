@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import time
-from engine.notify import send_startup_ip
+from engine.notify import (
+    send_startup_notification,
+    start_network_change_monitor
+)
 from engine.scheduler import Scheduler
 from engine.config import load, get_devices
 from engine.database import initialize, sync_status
@@ -106,8 +109,6 @@ def main():
     print("Initializing database...")
     initialize()
 
-    send_startup_ip()
-
     print("Loading configuration...")
     config = load()
 
@@ -132,6 +133,9 @@ def main():
     networks = customer["networks"]
 
     setup_network_routes(networks)
+
+    send_startup_notification()
+    start_network_change_monitor()
 
     scheduler = Scheduler()
 

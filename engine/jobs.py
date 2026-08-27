@@ -11,6 +11,7 @@ from engine.state import update
 from engine.classifier import classify
 from engine.database import add_event, update_status
 from engine.constants import STATE_UP, STATE_DOWN
+from engine.notify import send_event_notification
 
 
 def event(job, state, duration):
@@ -78,6 +79,20 @@ def event(job, state, duration):
     print(
         f"{timestamp}  EVENT    {message}"
     )
+
+    try:
+
+        send_event_notification(
+            job,
+            state,
+            duration
+        )
+
+    except Exception as e:
+
+        print(
+            f"{timestamp}  NTFY     ERROR    {e}"
+        )
 
 
 def run(job):

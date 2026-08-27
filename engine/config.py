@@ -405,7 +405,12 @@ def load_settings():
                 "server": "https://ntfy.sh",
                 "topic": "",
                 "token": "",
-                "name": ""
+                "name": "",
+                "location": "",
+                "notify_startup": True,
+                "notify_incidents": True,
+                "notify_recoveries": True,
+                "notify_network_changes": True
             }
         }
 
@@ -417,15 +422,34 @@ def load_settings():
 
         data = json.load(f)
 
-    if "ntfy" not in data:
+    ntfy = data.setdefault(
+        "ntfy",
+        {}
+    )
 
-        data["ntfy"] = {
-            "enabled": False,
-            "server": "https://ntfy.sh",
-            "topic": "",
-            "token": "",
-            "name": ""
-        }
+    defaults = {
+        "enabled": False,
+        "server": "https://ntfy.sh",
+        "topic": "",
+        "token": "",
+        "name": "",
+        "location": "",
+        "notify_startup": True,
+        "notify_incidents": True,
+        "notify_recoveries": True,
+        "notify_network_changes": True
+    }
+
+    changed = False
+
+    for key, value in defaults.items():
+
+        if key not in ntfy:
+
+            ntfy[key] = value
+            changed = True
+
+    if changed:
 
         save_settings(data)
 
@@ -489,13 +513,19 @@ def update_ntfy_settings(
     server,
     topic,
     token,
-    name
+    name,
+    location,
+    notify_startup=True,
+    notify_incidents=True,
+    notify_recoveries=True,
+    notify_network_changes=True
 ):
 
     server = server.strip()
     topic = topic.strip()
     token = token.strip()
     name = name.strip()
+    location = location.strip()
 
     if enabled and not server:
 
@@ -511,7 +541,11 @@ def update_ntfy_settings(
 
     if not name:
 
-        name = "Scout"
+        name = "Watchdog"
+
+    if not location:
+
+        location = "Not configured"
 
     data = load_settings()
 
@@ -520,7 +554,12 @@ def update_ntfy_settings(
         "server": server,
         "topic": topic,
         "token": token,
-        "name": name
+        "name": name,
+        "location": location,
+        "notify_startup": bool(notify_startup),
+        "notify_incidents": bool(notify_incidents),
+        "notify_recoveries": bool(notify_recoveries),
+        "notify_network_changes": bool(notify_network_changes)
     }
 
     save_settings(data)
@@ -532,16 +571,39 @@ def get_ntfy_settings():
 
     data = load_settings()
 
-    return data.get(
+    ntfy = data.get(
         "ntfy",
-        {
-            "enabled": False,
-            "server": "https://ntfy.sh",
-            "topic": "",
-            "token": "",
-            "name": ""
-        }
+        {}
     )
+
+    defaults = {
+        "enabled": False,
+        "server": "https://ntfy.sh",
+        "topic": "",
+        "token": "",
+        "name": "",
+        "location": "",
+        "notify_startup": True,
+        "notify_incidents": True,
+        "notify_recoveries": True,
+        "notify_network_changes": True
+    }
+
+    changed = False
+
+    for key, value in defaults.items():
+
+        if key not in ntfy:
+
+            ntfy[key] = value
+            changed = True
+
+    if changed:
+
+        data["ntfy"] = ntfy
+        save_settings(data)
+
+    return ntfy
 
 
 def test_ntfy(
@@ -551,7 +613,7 @@ def test_ntfy(
     name
 ):
 
-    from engine.notify import send_ntfy
+    from engine.notify import send_test_notification
 
     server = server.strip()
     topic = topic.strip()
@@ -572,14 +634,13 @@ def test_ntfy(
 
     if not name:
 
-        name = "Scout"
+        name = "Watchdog"
 
-    success = send_ntfy(
+    success = send_test_notification(
         server,
         topic,
         token,
-        name,
-        "NetMonitor NTFY test notification"
+        name
     )
 
     if not success:

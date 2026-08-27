@@ -856,7 +856,7 @@
 
         <div>
             <h2>Notifications</h2>
-            <p>Configure NTFY notifications for NetMonitor</p>
+            <p>Configure personalised NTFY notifications for this Watchdog</p>
         </div>
 
     </div>
@@ -898,6 +898,35 @@
         <div class="form-grid">
 
             <label>
+                Watchdog Name
+
+                <input name="name"
+                       type="text"
+                       value="{{ ntfy.get('name', '') }}"
+                       placeholder="Scout"
+                       required>
+
+                <small>
+                    The name shown in every notification title.
+                </small>
+
+            </label>
+
+            <label>
+                Location
+
+                <input name="location"
+                       type="text"
+                       value="{{ ntfy.get('location', '') }}"
+                       placeholder="Job Site">
+
+                <small>
+                    Identifies where this Watchdog is installed.
+                </small>
+
+            </label>
+
+            <label>
                 NTFY Server
 
                 <input name="server"
@@ -922,7 +951,7 @@
                        required>
 
                 <small>
-                    The NTFY topic where notifications will be sent.
+                    The NTFY topic where notifications are sent.
                 </small>
 
             </label>
@@ -941,20 +970,64 @@
 
             </label>
 
+        </div>
+
+        <div class="section-heading configuration-subsection-heading">
+
+            <div>
+                <h3>Notification Types</h3>
+                <p>Choose which events should generate NTFY messages.</p>
+            </div>
+
+        </div>
+
+        <div class="form-checks">
+
             <label>
-                Notification Name
-
-                <input name="name"
-                       type="text"
-                       value="{{ ntfy.get('name', '') }}"
-                       placeholder="Watchdog"
-                       required>
-
-                <small>
-                    Name displayed as the notification title.
-                </small>
-
+                <input type="checkbox"
+                       name="notify_startup"
+                       {% if ntfy.get('notify_startup', True) %}checked{% endif %}>
+                Startup
             </label>
+
+            <label>
+                <input type="checkbox"
+                       name="notify_incidents"
+                       {% if ntfy.get('notify_incidents', True) %}checked{% endif %}>
+                Incidents
+            </label>
+
+            <label>
+                <input type="checkbox"
+                       name="notify_recoveries"
+                       {% if ntfy.get('notify_recoveries', True) %}checked{% endif %}>
+                Recoveries
+            </label>
+
+            <label>
+                <input type="checkbox"
+                       name="notify_network_changes"
+                       {% if ntfy.get('notify_network_changes', True) %}checked{% endif %}>
+                Network Changes
+            </label>
+
+        </div>
+
+        <div class="empty-state">
+
+            <span class="empty-check">i</span>
+
+            <div>
+                <strong>Detailed notifications</strong>
+                <p>
+                    Startup messages identify the Watchdog, location, hostname,
+                    software version, uptime, system boot time, Tailscale address,
+                    monitored devices and every configured network. Incident and
+                    recovery messages include the affected object, target IP,
+                    network, interface, Watchdog IP and gateway. Network change
+                    messages show the previous and current address.
+                </p>
+            </div>
 
         </div>
 
@@ -997,36 +1070,52 @@
     <div class="form-grid">
 
         <label>
+            Watchdog Name
+            <input value="{{ ntfy.get('name', '') }}" disabled>
+        </label>
+
+        <label>
+            Location
+            <input value="{{ ntfy.get('location', '') }}" disabled>
+        </label>
+
+        <label>
             NTFY Server
-
-            <input value="{{ ntfy.get('server', 'https://ntfy.sh') }}"
-                   disabled>
-
+            <input value="{{ ntfy.get('server', 'https://ntfy.sh') }}" disabled>
         </label>
 
         <label>
             Topic
-
-            <input value="{{ ntfy.get('topic', '') }}"
-                   disabled>
-
+            <input value="{{ ntfy.get('topic', '') }}" disabled>
         </label>
 
         <label>
             Access Token
+            <input type="password" value="••••••••" disabled>
+        </label>
 
-            <input type="password"
-                   value="••••••••"
-                   disabled>
+    </div>
 
+    <div class="form-checks">
+
+        <label>
+            <input type="checkbox" {% if ntfy.get('notify_startup', True) %}checked{% endif %} disabled>
+            Startup
         </label>
 
         <label>
-            Notification Name
+            <input type="checkbox" {% if ntfy.get('notify_incidents', True) %}checked{% endif %} disabled>
+            Incidents
+        </label>
 
-            <input value="{{ ntfy.get('name', '') }}"
-                   disabled>
+        <label>
+            <input type="checkbox" {% if ntfy.get('notify_recoveries', True) %}checked{% endif %} disabled>
+            Recoveries
+        </label>
 
+        <label>
+            <input type="checkbox" {% if ntfy.get('notify_network_changes', True) %}checked{% endif %} disabled>
+            Network Changes
         </label>
 
     </div>
@@ -1036,7 +1125,8 @@
 </section>
 
 {% endif %}
-    {% if page == 'internet' %}
+
+{% if page == 'internet' %}
 
     <section class="card configuration-section">
 

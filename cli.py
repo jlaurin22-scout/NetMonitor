@@ -289,10 +289,7 @@ def notifications_menu():
 
         settings = config.load_settings()
 
-        ntfy = settings.get(
-            "ntfy",
-            {}
-        )
+        ntfy = config.get_ntfy_settings()
 
         enabled = ntfy.get(
             "enabled",
@@ -319,23 +316,48 @@ def notifications_menu():
             ""
         )
 
+        location = ntfy.get(
+            "location",
+            ""
+        )
+
         print("Current Configuration")
         print("---------------------")
         print(
-            f"Enabled : {'Yes' if enabled else 'No'}"
+            f"Enabled             : {'Yes' if enabled else 'No'}"
         )
-        print(f"Server  : {server}")
+        print(f"Server              : {server}")
         print(
-            f"Topic   : "
+            f"Topic               : "
             f"{topic if topic else 'Not configured'}"
         )
         print(
-            f"Token   : "
+            f"Token               : "
             f"{'Configured' if token else 'Not configured'}"
         )
         print(
-            f"Name    : "
+            f"Watchdog Name       : "
             f"{name if name else 'Not configured'}"
+        )
+        print(
+            f"Location            : "
+            f"{location if location else 'Not configured'}"
+        )
+        print(
+            f"Startup             : "
+            f"{'Yes' if ntfy.get('notify_startup', True) else 'No'}"
+        )
+        print(
+            f"Incidents           : "
+            f"{'Yes' if ntfy.get('notify_incidents', True) else 'No'}"
+        )
+        print(
+            f"Recoveries          : "
+            f"{'Yes' if ntfy.get('notify_recoveries', True) else 'No'}"
+        )
+        print(
+            f"Network Changes     : "
+            f"{'Yes' if ntfy.get('notify_network_changes', True) else 'No'}"
         )
         print()
 
@@ -343,7 +365,13 @@ def notifications_menu():
         print("2) Server")
         print("3) Topic")
         print("4) Token")
-        print("5) Scout Name")
+        print("5) Watchdog Name")
+        print("6) Location")
+        print("7) Startup Notifications")
+        print("8) Incident Notifications")
+        print("9) Recovery Notifications")
+        print("10) Network Change Notifications")
+        print("11) Send Test Notification")
         print()
         print("B) Back")
         print()
@@ -371,17 +399,27 @@ def notifications_menu():
             input("Press ENTER to continue...")
             os.system("clear")
 
-        elif choice == "2":
+        elif choice in ("2", "3", "4", "5", "6"):
+
+            fields = {
+                "2": ("server", "NTFY Server", server),
+                "3": ("topic", "NTFY Topic", topic),
+                "4": ("token", "NTFY Token", token),
+                "5": ("name", "Watchdog Name", name),
+                "6": ("location", "Location", location)
+            }
+
+            key, label, current = fields[choice]
 
             print()
 
             value = input(
-                f"NTFY Server [{server}] : "
+                f"{label} [{current}] : "
             ).strip()
 
             if value:
 
-                ntfy["server"] = value
+                ntfy[key] = value
 
                 settings["ntfy"] = ntfy
 
@@ -391,92 +429,68 @@ def notifications_menu():
 
                 print()
                 ui.success(
-                    "NTFY server updated successfully."
+                    f"{label} updated successfully."
                 )
                 print()
                 input("Press ENTER to continue...")
 
             os.system("clear")
 
-        elif choice == "3":
+        elif choice in ("7", "8", "9", "10"):
+
+            keys = {
+                "7": "notify_startup",
+                "8": "notify_incidents",
+                "9": "notify_recoveries",
+                "10": "notify_network_changes"
+            }
+
+            key = keys[choice]
+            ntfy[key] = not ntfy.get(
+                key,
+                True
+            )
+
+            settings["ntfy"] = ntfy
+
+            config.save_settings(
+                settings
+            )
 
             print()
-
-            value = input(
-                f"NTFY Topic [{topic}] : "
-            ).strip()
-
-            if value:
-
-                ntfy["topic"] = value
-
-                settings["ntfy"] = ntfy
-
-                config.save_settings(
-                    settings
-                )
-
-                print()
-                ui.success(
-                    "NTFY topic updated successfully."
-                )
-                print()
-                input("Press ENTER to continue...")
-
+            ui.success(
+                f"{key.replace('_', ' ').title()} "
+                f"{'enabled' if ntfy[key] else 'disabled'}."
+            )
+            print()
+            input("Press ENTER to continue...")
             os.system("clear")
 
-        elif choice == "4":
+        elif choice == "11":
 
             print()
 
-            value = input(
-                "NTFY Token : "
-            ).strip()
+            try:
 
-            if value:
-
-                ntfy["token"] = value
-
-                settings["ntfy"] = ntfy
-
-                config.save_settings(
-                    settings
+                config.test_ntfy(
+                    server,
+                    topic,
+                    token,
+                    name
                 )
 
-                print()
                 ui.success(
-                    "NTFY token updated successfully."
+                    "Test notification sent successfully."
                 )
-                print()
-                input("Press ENTER to continue...")
 
-            os.system("clear")
+            except Exception as e:
 
-        elif choice == "5":
+                ui.error(
+                    str(e)
+                )
 
             print()
-
-            value = input(
-                f"Scout Name [{name}] : "
-            ).strip()
-
-            if value:
-
-                ntfy["name"] = value
-
-                settings["ntfy"] = ntfy
-
-                config.save_settings(
-                    settings
-                )
-
-                print()
-                ui.success(
-                    "Scout name updated successfully."
-                )
-                print()
-                input("Press ENTER to continue...")
-
+            input("Press ENTER to continue...")
             os.system("clear")
 
         elif choice == "b":
@@ -491,7 +505,6 @@ def notifications_menu():
             print()
             input("Press ENTER to continue...")
             os.system("clear")
-
 
 def configuration_menu():
 
@@ -530,6 +543,11 @@ def configuration_menu():
             ""
         )
 
+        ntfy_location = ntfy.get(
+            "location",
+            ""
+        )
+
         print("Current Configuration")
         print("---------------------")
         print(f"Customer : {current_name}")
@@ -539,6 +557,10 @@ def configuration_menu():
             f"{'Enabled' if ntfy_enabled else 'Disabled'}"
             f"{f' ({ntfy_name})' if ntfy_name else ''}"
         )
+        if ntfy_location:
+            print(
+                f"Location : {ntfy_location}"
+            )
         print()
 
         print("1) Customer")
