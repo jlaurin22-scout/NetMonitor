@@ -383,6 +383,176 @@
     {% endif %}
 
 
+    {% if page == 'device_scan' %}
+
+    <section class="card configuration-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Network Scan</h2>
+                <p>Discover devices on the configured networks and choose which ones to monitor.</p>
+            </div>
+
+            <div class="configuration-section-actions">
+
+                <a class="button button-secondary"
+                   href="{{ url_for('configuration.devices') }}">
+                    Back to Devices
+                </a>
+
+                <a class="button"
+                   href="{{ url_for('configuration.scan_devices') }}">
+                    Scan Again
+                </a>
+
+            </div>
+
+        </div>
+
+        {% if scan_devices %}
+
+        <form method="post"
+              action="{{ url_for('configuration.add_scanned_devices') }}">
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>IP Address</th>
+                            <th>Hostname</th>
+                            <th>Vendor</th>
+                            <th>Type</th>
+                            <th>Network</th>
+                            <th>MAC Address</th>
+                            <th>SNMP</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                    {% for device in scan_devices %}
+
+                        <tr>
+
+                            <td>
+                                {% if not device.already_monitored %}
+
+                                <input type="checkbox"
+                                       name="device"
+                                       value='{{ {
+                                           "ip": device.ip,
+                                           "hostname": device.hostname,
+                                           "snmp": device.snmp,
+                                           "network_id": device.network_id
+                                       } | tojson | e }}'>
+
+                                {% else %}
+
+                                <span class="check-badge check-enabled">
+                                    ✓
+                                </span>
+
+                                {% endif %}
+                            </td>
+
+                            <td>{{ device.ip }}</td>
+                            <td>{{ device.hostname or "Unknown" }}</td>
+                            <td>{{ device.vendor or "Unknown" }}</td>
+                            <td>{{ device.device_type or "Unknown" }}</td>
+                            <td>{{ device.network_name }}</td>
+                            <td>{{ device.mac or "Unknown" }}</td>
+
+                            <td>
+                                <span class="check-badge {% if device.snmp %}check-enabled{% endif %}">
+                                    {% if device.snmp %}Yes{% else %}No{% endif %}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if device.already_monitored %}
+
+                                <span class="status-badge status-badge-up">
+                                    MONITORED
+                                </span>
+
+                                {% else %}
+
+                                <span class="status-badge status-badge-unknown">
+                                    DISCOVERED
+                                </span>
+
+                                {% endif %}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="empty-state">
+
+                <span class="empty-check">i</span>
+
+                <div>
+                    <strong>Review before adding</strong>
+                    <p>
+                        Select the discovered devices you want to monitor.
+                        Existing monitored devices cannot be selected again.
+                        New devices use the discovered hostname when available,
+                        enable Ping, and enable SNMP when detected.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <a class="button button-secondary"
+                   href="{{ url_for('configuration.devices') }}">
+                    Cancel
+                </a>
+
+                <button class="button"
+                        type="submit">
+                    Add Selected Devices
+                </button>
+
+            </div>
+
+        </form>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <span class="empty-check">i</span>
+
+            <div>
+                <strong>No devices found</strong>
+                <p>
+                    The scan did not discover any responding devices on the
+                    configured networks.
+                </p>
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+    {% endif %}
+
     {% if page == 'devices' %}
 
     <section class="card configuration-section">
@@ -396,6 +566,13 @@
 
             {% if current_user.role == 'admin' %}
 
+            <button class="button button-secondary"
+                    type="button"
+                    id="scan-network-button"
+                    onclick="startNetworkScan(this)">
+                Scan Network
+            </button>
+
             <button class="button button-primary"
                     type="button"
                     data-open-modal="add-device-modal">
@@ -403,7 +580,6 @@
             </button>
 
             {% endif %}
-
         </div>
 
         {% if request.args.get('message') %}
@@ -421,6 +597,35 @@
         </div>
 
         {% endif %}
+
+        {% if current_user.role == 'admin' and devices %}
+
+        <form method="post"
+              action="{{ url_for('configuration.remove_selected_devices') }}"
+              id="mass-delete-form"
+              onsubmit="return confirmMassDelete();">
+
+            <div class="device-bulk-actions">
+
+                <label>
+                    <input type="checkbox"
+                           id="select-all-devices">
+                    Select All
+                </label>
+
+                <button class="button button-danger"
+                        type="submit"
+                        id="delete-selected-devices"
+                        disabled>
+                    Delete Selected
+                </button>
+
+            </div>
+
+        </form>
+
+        {% endif %}
+
 
         {% if not devices %}
 
@@ -470,6 +675,7 @@
                     <thead>
 
                         <tr>
+                            <th></th>
                             <th>ID</th>
                             <th>Name</th>
                             <th>IP Address</th>
@@ -486,6 +692,15 @@
                     {% for device in network_devices %}
 
                         <tr>
+
+                            <td>
+                                {% if current_user.role == 'admin' %}
+                                <input type="checkbox"
+                                       name="device_id"
+                                       value="{{ device.id }}"
+                                       class="device-select">
+                                {% endif %}
+                            </td>
 
                             <td>{{ device.id }}</td>
 
@@ -2220,6 +2435,223 @@ if (speedTestForm) {
     );
 
 }
+
+
+const scanNetworkButton =
+    document.getElementById(
+        'scan-network-button'
+    );
+
+if (scanNetworkButton) {
+
+    scanNetworkButton.addEventListener(
+        'click',
+        function () {
+
+            scanNetworkButton.disabled = true;
+
+            scanNetworkButton.textContent =
+                'Scanning…';
+
+            scanNetworkButton.classList.add(
+                'button-running'
+            );
+
+            window.location.href =
+                "{{ url_for('configuration.scan_devices') }}";
+
+        }
+    );
+
+}
+
+
+document.querySelectorAll(
+    'form[action*="/devices/scan/add"]'
+).forEach(
+    function (form) {
+
+        form.addEventListener(
+            'submit',
+            function () {
+
+                const button =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = true;
+
+                button.textContent =
+                    'Saving…';
+
+                button.classList.add(
+                    'button-running'
+                );
+
+            }
+        );
+
+    }
+);
+
+
+const selectAllDevices =
+    document.getElementById(
+        'select-all-devices'
+    );
+
+const deviceCheckboxes =
+    document.querySelectorAll(
+        '.device-select'
+    );
+
+const deleteSelectedDevices =
+    document.getElementById(
+        'delete-selected-devices'
+    );
+
+
+function updateDeviceSelection() {
+
+    const selected =
+        document.querySelectorAll(
+            '.device-select:checked'
+        );
+
+    if (deleteSelectedDevices) {
+
+        deleteSelectedDevices.disabled =
+            selected.length === 0;
+
+    }
+
+    if (
+        selectAllDevices &&
+        deviceCheckboxes.length > 0
+    ) {
+
+        selectAllDevices.checked =
+            selected.length ===
+            deviceCheckboxes.length;
+
+    }
+
+}
+
+
+if (selectAllDevices) {
+
+    selectAllDevices.addEventListener(
+        'change',
+        function () {
+
+            deviceCheckboxes.forEach(
+                function (checkbox) {
+
+                    checkbox.checked =
+                        selectAllDevices.checked;
+
+                }
+            );
+
+            updateDeviceSelection();
+
+        }
+    );
+
+}
+
+
+deviceCheckboxes.forEach(
+    function (checkbox) {
+
+        checkbox.addEventListener(
+            'change',
+            updateDeviceSelection
+        );
+
+    }
+);
+
+
+function confirmMassDelete() {
+
+    const selected =
+        document.querySelectorAll(
+            '.device-select:checked'
+        );
+
+    if (selected.length === 0) {
+
+        return false;
+
+    }
+
+    const form =
+        document.getElementById(
+            'mass-delete-form'
+        );
+
+    if (!form) {
+
+        return false;
+
+    }
+
+    form.querySelectorAll(
+        'input[name="device_id"]'
+    ).forEach(
+        function (input) {
+
+            input.remove();
+
+        }
+    );
+
+    selected.forEach(
+        function (checkbox) {
+
+            const input =
+                document.createElement(
+                    'input'
+                );
+
+            input.type = 'hidden';
+
+            input.name =
+                'device_id';
+
+            input.value =
+                checkbox.value;
+
+            form.appendChild(
+                input
+            );
+
+        }
+    );
+
+    return confirm(
+        'Remove ' +
+        selected.length +
+        ' selected device' +
+        (
+            selected.length === 1
+                ? ''
+                : 's'
+        ) +
+        ' from monitoring?'
+    );
+
+}
+
+
+updateDeviceSelection();
 
 
 document.addEventListener(

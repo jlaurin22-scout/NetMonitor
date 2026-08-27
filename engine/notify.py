@@ -15,6 +15,74 @@ from engine.constants import BUILD, VERSION
 
 NOTIFY_STATE = "/var/lib/netmonitor/notify_state.json"
 NETWORK_CHECK_INTERVAL = 30
+RESTART_REASON_FILE = "/var/lib/netmonitor/restart_reason.json"
+
+
+def set_restart_reason(
+    reason,
+    details=""
+):
+
+    data = {
+        "reason": reason,
+        "details": details
+    }
+
+    try:
+
+        with open(
+            RESTART_REASON_FILE,
+            "w"
+        ) as f:
+
+            json.dump(
+                data,
+                f
+            )
+
+    except OSError as e:
+
+        syslog.syslog(
+            f"NetMonitor: could not save restart reason: {e}"
+        )
+
+
+def get_restart_reason():
+
+    try:
+
+        with open(
+            RESTART_REASON_FILE,
+            "r"
+        ) as f:
+
+            return json.load(f)
+
+    except (
+        OSError,
+        json.JSONDecodeError
+    ):
+
+        return None
+
+
+def clear_restart_reason():
+
+    try:
+
+        os.remove(
+            RESTART_REASON_FILE
+        )
+
+    except FileNotFoundError:
+
+        pass
+
+    except OSError as e:
+
+        syslog.syslog(
+            f"NetMonitor: could not clear restart reason: {e}"
+        )
 
 
 
@@ -1009,6 +1077,8 @@ def send_startup_notification():
 
     identity = get_watchdog_identity()
     current = identity["networks"]
+
+    restart_reason = get_restart_reason()
     previous_state = _load_notify_state()
     previous = previous_state.get(
         "networks",
@@ -1024,18 +1094,47 @@ def send_startup_notification():
 
         try:
 
-            title = (
-                f"🐕 {identity['name']} — STARTED"
-            )
+            if restart_reason:
+
+                reason = restart_reason.get(
+                    "reason",
+                    "STARTED"
+                )
+
+                details = restart_reason.get(
+                    "details",
+                    ""
+                )
+
+                title = (
+                    f"🐕 {identity['name']} — "
+                    f"{reason.upper()}"
+                )
+
+                message = (
+                    f"{details}\n\n"
+                    "System restarted."
+                    if details
+                    else
+                    "System restarted."
+                )
+
+            else:
+
+                title = (
+                    f"🐕 {identity['name']} — STARTED"
+                )
+
+                message = format_startup_message(
+                    identity
+                )
 
             success = send_ntfy(
                 server,
                 topic,
                 token,
                 title,
-                format_startup_message(
-                    identity
-                ),
+                message,
                 tags="dog,computer",
                 priority="default"
             )
@@ -1045,6 +1144,10 @@ def send_startup_notification():
                 syslog.syslog(
                     "NetMonitor: startup notification sent"
                 )
+
+                if restart_reason:
+
+                    clear_restart_reason()
 
                 break
 

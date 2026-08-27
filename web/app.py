@@ -24,7 +24,18 @@ if PROJECT_DIR not in sys.path:
         0,
         PROJECT_DIR
     )
+ENGINE_DIR = os.path.join(
+    PROJECT_DIR,
+    "engine"
+)
 
+
+if ENGINE_DIR not in sys.path:
+
+    sys.path.insert(
+        0,
+        ENGINE_DIR
+    )
 
 def create_app():
 

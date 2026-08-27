@@ -13,6 +13,8 @@ from flask import (
 
 from engine import config
 from engine import database
+from engine.inventory import scanner
+from engine.notify import set_restart_reason
 
 from web.auth import admin_required
 
@@ -244,7 +246,7 @@ def _find_network(network_id):
     return None
 
 
-def _render_configuration(page):
+def _render_configuration(page, **context):
 
     customer = config.load_customer()
 
@@ -263,6 +265,7 @@ def _render_configuration(page):
         devices=_device_rows(),
         settings=config.load_settings(),
         internet_targets=config.get_internet_targets(),
+        **context
     )
 
 
@@ -1074,6 +1077,280 @@ def internet_speedtest():
         )
 
 
+@configuration.route("/devices/scan")
+@admin_required
+def scan_devices():
+
+    try:
+
+        discovered = scanner.scan()
+        configured = config.get_devices()
+
+        configured_ips = {
+            device.get("ip", "").strip()
+            for device in configured
+        }
+
+        networks = config.get_networks()
+
+        network_names = {
+            network["id"]: network["name"]
+            for network in networks
+        }
+
+        devices = []
+
+        for device in discovered:
+
+            ip = str(device.ip).strip()
+
+            devices.append(
+                {
+                    "ip": ip,
+                    "mac": str(
+                        device.mac or ""
+                    ).strip(),
+                    "hostname": str(
+                        device.hostname or ""
+                    ).strip(),
+                    "vendor": str(
+                        device.vendor or "Unknown"
+                    ).strip(),
+                    "device_type": str(
+                        device.device_type or "Unknown"
+                    ).strip(),
+                    "response": device.response,
+                    "snmp": bool(device.snmp),
+                    "network_id": device.network_id,
+                    "network_name": network_names.get(
+                        device.network_id,
+                        "Unknown"
+                    ),
+                    "already_monitored": (
+                        ip in configured_ips
+                        or
+                        any(
+                            ip == str(
+                                network.get(
+                                    "gateway",
+                                    ""
+                                )
+                            ).strip()
+                            for network in networks
+                        )
+                    )
+                }
+            )
+
+        return _render_configuration(
+            "device_scan",
+            scan_devices=devices
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error=f"Network scan failed: {e}"
+            )
+        )
+
+
+@configuration.route(
+    "/devices/scan/add",
+    methods=["POST"]
+)
+@admin_required
+def add_scanned_devices():
+
+    selected = request.form.getlist(
+        "device"
+    )
+
+    if not selected:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error="No devices selected."
+            )
+        )
+
+    try:
+
+        configured_ips = {
+            device.get("ip", "").strip()
+            for device in config.get_devices()
+        }
+
+        added = 0
+        added_devices = []
+
+        for item in selected:
+
+            try:
+
+                payload = json.loads(item)
+
+            except (TypeError, ValueError):
+
+                continue
+
+            ip = str(
+                payload.get("ip", "")
+            ).strip()
+
+            if not ip:
+
+                continue
+
+            if ip in configured_ips:
+
+                continue
+
+            network_id = payload.get(
+                "network_id"
+            )
+
+            if network_id is None:
+
+                continue
+
+            network = None
+
+            for configured_network in config.get_networks():
+
+                if configured_network.get("id") == int(network_id):
+
+                    network = configured_network
+
+                    break
+
+            if network is None:
+
+                continue
+
+            gateway = str(
+                network.get(
+                    "gateway",
+                    ""
+                )
+            ).strip()
+
+            if ip == gateway:
+
+                continue
+
+            name = str(
+                payload.get("hostname", "")
+            ).strip()
+
+            if (
+                not name
+                or
+                name.lower() == "unknown"
+            ):
+
+                name = ip
+
+            config.add_device(
+                name=name,
+                ip=ip,
+                ping=True,
+                snmp=bool(
+                    payload.get("snmp", False)
+                ),
+                network_id=int(network_id),
+                monitoring_mode="normal"
+            )
+
+            configured_ips.add(ip)
+            added += 1
+
+            added_devices.append(
+                (
+                    name,
+                    ip
+                )
+            )
+
+        if not added:
+
+            return redirect(
+                url_for(
+                    "configuration.devices",
+                    error="No new devices were added."
+                )
+            )
+
+        if len(added_devices) == 1:
+
+            added_details = (
+                f"{added_devices[0][0]} "
+                f"({added_devices[0][1]})"
+            )
+
+        else:
+
+            added_details = "\n".join(
+                f"{device_name} ({device_ip})"
+                for device_name, device_ip
+                in added_devices
+            )
+
+        reason = (
+            "Device Added"
+            if len(added_devices) == 1
+            else
+            "Devices Added"
+        )
+
+        set_restart_reason(
+            reason,
+            added_details
+        )
+
+        restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
+
+        message = (
+            f"{added} device"
+            f"{'s' if added != 1 else ''} added successfully."
+            if restarted
+            else
+            f"{added} device"
+            f"{'s' if added != 1 else ''} saved. "
+            "Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error=f"Could not add scanned devices: {e}"
+            )
+        )
+
+
 @configuration.route("/devices")
 def devices():
 
@@ -1115,7 +1392,26 @@ def add_device():
             )
         )
 
+        set_restart_reason(
+            "Device Added",
+            (
+                f"{request.form.get('name', '').strip()} "
+                f"({request.form.get('ip', '').strip()})"
+            )
+        )
+
         restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
 
         message = (
             "Device added successfully."
@@ -1210,7 +1506,26 @@ def edit_device(device_id):
                 f"{old_network_id}:{old_name}"
             )
 
+        set_restart_reason(
+            "Device Updated",
+            (
+                f"{new_name} "
+                f"({new_ip})"
+            )
+        )
+
         restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
 
         message = (
             "Device updated successfully."
@@ -1232,6 +1547,145 @@ def edit_device(device_id):
             url_for(
                 "configuration.devices",
                 error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/devices/remove-selected",
+    methods=["POST"]
+)
+@admin_required
+def remove_selected_devices():
+
+    selected = request.form.getlist(
+        "device_id"
+    )
+
+    if not selected:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error="No devices selected."
+            )
+        )
+
+    removed_devices = []
+
+    try:
+
+        for value in selected:
+
+            try:
+
+                device_id = int(value)
+
+            except (TypeError, ValueError):
+
+                continue
+
+            selected_device = _find_device(
+                device_id
+            )
+
+            if selected_device is None:
+
+                continue
+
+            removed = config.remove_device(
+                device_id
+            )
+
+            network_id = removed.get(
+                "network_id",
+                1
+            )
+
+            database.remove_status(
+                f"{network_id}:{removed['name']}"
+            )
+
+            removed_devices.append(
+                (
+                    removed["name"],
+                    removed["ip"]
+                )
+            )
+
+        if not removed_devices:
+
+            return redirect(
+                url_for(
+                    "configuration.devices",
+                    error="No devices were removed."
+                )
+            )
+
+        if len(removed_devices) == 1:
+
+            removed_details = (
+                f"{removed_devices[0][0]} "
+                f"({removed_devices[0][1]})"
+            )
+
+            reason = "Device Removed"
+
+        else:
+
+            removed_details = "\n".join(
+                f"{name} ({ip})"
+                for name, ip
+                in removed_devices
+            )
+
+            reason = "Devices Removed"
+
+        set_restart_reason(
+            reason,
+            removed_details
+        )
+
+        restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
+
+        count = len(
+            removed_devices
+        )
+
+        message = (
+            f"{count} device"
+            f"{'s' if count != 1 else ''} removed successfully."
+            if restarted
+            else
+            f"{count} device"
+            f"{'s' if count != 1 else ''} removed. "
+            "Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error=f"Could not remove selected devices: {e}"
             )
         )
 
@@ -1269,7 +1723,26 @@ def remove_device(device_id):
             f"{network_id}:{removed['name']}"
         )
 
+        set_restart_reason(
+            "Device Removed",
+            (
+                f"{removed['name']} "
+                f"({removed['ip']})"
+            )
+        )
+
         restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
 
         message = (
             "Device removed successfully."
