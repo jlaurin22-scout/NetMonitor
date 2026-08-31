@@ -42,6 +42,10 @@ EOF
         -m u:$WEB_USER:rx \
         "$PROJECT_DIR"
 
+    setfacl \
+        -m u:$WEB_USER:rwx \
+        "$DATA_DIR/reports"
+
     echo "Web GUI service permissions configured."
     echo
 }
