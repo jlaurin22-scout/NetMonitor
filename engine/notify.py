@@ -177,16 +177,22 @@ def get_tailscale_ip():
 
         return addresses[0]
 
-    result = subprocess.run(
-        [
-            "tailscale",
-            "ip",
-            "-4"
-        ],
-        capture_output=True,
-        text=True,
-        check=False
-    )
+    try:
+
+        result = subprocess.run(
+            [
+                "tailscale",
+                "ip",
+                "-4"
+            ],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+
+    except FileNotFoundError:
+
+        return ""
 
     if result.returncode == 0:
 
