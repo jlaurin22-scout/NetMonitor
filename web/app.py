@@ -49,6 +49,10 @@ def create_app():
 
     app.secret_key = auth.initialize()
 
+    from engine import database
+
+    database.initialize()
+
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",

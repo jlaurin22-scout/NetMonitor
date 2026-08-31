@@ -134,6 +134,23 @@
 
     <section class="card">
 
+        {% if request.args.get('message') %}
+
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
+
+        {% endif %}
+
+        {% if request.args.get('error') %}
+
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
+
+        {% endif %}
+
+
         <div class="section-heading">
 
             <div>
@@ -157,6 +174,82 @@
             </div>
 
         </div>
+
+
+        {% if current_user.role == 'admin' and events %}
+
+        <div
+            style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 16px;
+                flex-wrap: wrap;
+            "
+        >
+
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                "
+            >
+
+                <label>
+
+                    <input
+                        type="checkbox"
+                        id="select-all-events"
+                    >
+
+                    Select All
+
+                </label>
+
+                <button
+                    class="button button-danger"
+                    type="submit"
+                    form="event-delete-form"
+                    id="delete-selected-events"
+                    disabled
+                >
+                    Delete Selected
+                </button>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('events.clear') }}"
+                onsubmit="
+                    return confirm(
+                        'Clear all recorded events?'
+                    );
+                "
+            >
+
+                <button
+                    class="button button-danger"
+                    type="submit"
+                >
+                    Clear All Events
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <form
+            method="post"
+            action="{{ url_for('events.delete_selected') }}"
+            id="event-delete-form"
+        >
+
+        {% endif %}
 
 
         {% if events %}
@@ -185,6 +278,17 @@
                             text-align: left;
                         "
                     >
+
+                        <th
+                            style="
+                                padding:
+                                    10px 8px;
+                                white-space:
+                                    nowrap;
+                            "
+                        >
+                            Select
+                        </th>
 
                         <th
                             style="
@@ -248,6 +352,27 @@
                                 1px solid #e9ecef;
                         "
                     >
+
+                        <td
+                            style="
+                                padding:
+                                    11px 8px;
+                            "
+                        >
+
+                            {% if current_user.role == 'admin' %}
+
+                            <input
+                                type="checkbox"
+                                name="event_id"
+                                value="{{ event.id }}"
+                                class="event-select"
+                            >
+
+                            {% endif %}
+
+                        </td>
+
 
                         <td
                             style="
@@ -341,6 +466,13 @@
         </div>
 
 
+        {% if current_user.role == 'admin' and events %}
+
+        </form>
+
+        {% endif %}
+
+
         {% else %}
 
 
@@ -372,6 +504,135 @@
 
 
 </main>
+
+
+<script>
+
+const selectAllEvents =
+    document.getElementById(
+        'select-all-events'
+    );
+
+const eventCheckboxes =
+    document.querySelectorAll(
+        '.event-select'
+    );
+
+const deleteSelectedEvents =
+    document.getElementById(
+        'delete-selected-events'
+    );
+
+
+function updateEventSelection() {
+
+    const selected =
+        document.querySelectorAll(
+            '.event-select:checked'
+        );
+
+    if (deleteSelectedEvents) {
+
+        deleteSelectedEvents.disabled =
+            selected.length === 0;
+
+    }
+
+    if (
+        selectAllEvents &&
+        eventCheckboxes.length > 0
+    ) {
+
+        selectAllEvents.checked =
+            selected.length ===
+            eventCheckboxes.length;
+
+    }
+
+}
+
+
+if (selectAllEvents) {
+
+    selectAllEvents.addEventListener(
+        'change',
+        function () {
+
+            eventCheckboxes.forEach(
+                function (checkbox) {
+
+                    checkbox.checked =
+                        selectAllEvents.checked;
+
+                }
+            );
+
+            updateEventSelection();
+
+        }
+    );
+
+}
+
+
+eventCheckboxes.forEach(
+    function (checkbox) {
+
+        checkbox.addEventListener(
+            'change',
+            updateEventSelection
+        );
+
+    }
+);
+
+
+document
+    .getElementById(
+        'event-delete-form'
+    )
+    ?.addEventListener(
+        'submit',
+        function (event) {
+
+            const selected =
+                document.querySelectorAll(
+                    '.event-select:checked'
+                );
+
+            if (selected.length === 0) {
+
+                event.preventDefault();
+
+                return;
+
+            }
+
+            if (
+                !confirm(
+                    'Delete ' +
+                    selected.length +
+                    ' selected event' +
+                    (
+                        selected.length === 1
+                            ? ''
+                            : 's'
+                    ) +
+                    '?'
+                )
+            ) {
+
+                event.preventDefault();
+
+            }
+
+        }
+    );
+
+
+updateEventSelection();
+
+</script>
 
 
 <footer class="footer">

@@ -159,6 +159,99 @@
         </div>
 
 
+        {% if request.args.get('message') %}
+
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
+
+        {% endif %}
+
+        {% if request.args.get('error') %}
+
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
+
+        {% endif %}
+
+
+        {% if current_user.role == 'admin' and incidents %}
+
+        <div
+            style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 16px;
+                flex-wrap: wrap;
+            "
+        >
+
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                "
+            >
+
+                <label>
+
+                    <input
+                        type="checkbox"
+                        id="select-all-incidents"
+                    >
+
+                    Select All
+
+                </label>
+
+                <button
+                    class="button button-danger"
+                    type="submit"
+                    form="incident-delete-form"
+                    id="delete-selected-incidents"
+                    disabled
+                >
+                    Delete Selected
+                </button>
+
+            </div>
+
+
+            <form
+                method="post"
+                action="{{ url_for('incidents.clear') }}"
+                onsubmit="
+                    return confirm(
+                        'Clear all recorded incidents?'
+                    );
+                "
+            >
+
+                <button
+                    class="button button-danger"
+                    type="submit"
+                >
+                    Clear All Incidents
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <form
+            method="post"
+            action="{{ url_for('incidents.delete_selected') }}"
+            id="incident-delete-form"
+        >
+
+        {% endif %}
+
+
         {% if incidents %}
 
 
@@ -195,7 +288,24 @@
                 "
             >
 
-                <div>
+                <div
+                    style="
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    "
+                >
+
+                    {% if current_user.role == 'admin' %}
+
+                    <input
+                        type="checkbox"
+                        name="incident_id"
+                        value="{{ incident.incident_id }}"
+                        class="incident-select"
+                    >
+
+                    {% endif %}
 
                     <strong
                         style="
@@ -699,6 +809,13 @@
         {% endfor %}
 
 
+        {% if current_user.role == 'admin' and incidents %}
+
+        </form>
+
+        {% endif %}
+
+
         {% else %}
 
 
@@ -730,6 +847,135 @@
 
 
 </main>
+
+
+<script>
+
+const selectAllIncidents =
+    document.getElementById(
+        'select-all-incidents'
+    );
+
+const incidentCheckboxes =
+    document.querySelectorAll(
+        '.incident-select'
+    );
+
+const deleteSelectedIncidents =
+    document.getElementById(
+        'delete-selected-incidents'
+    );
+
+
+function updateIncidentSelection() {
+
+    const selected =
+        document.querySelectorAll(
+            '.incident-select:checked'
+        );
+
+    if (deleteSelectedIncidents) {
+
+        deleteSelectedIncidents.disabled =
+            selected.length === 0;
+
+    }
+
+    if (
+        selectAllIncidents &&
+        incidentCheckboxes.length > 0
+    ) {
+
+        selectAllIncidents.checked =
+            selected.length ===
+            incidentCheckboxes.length;
+
+    }
+
+}
+
+
+if (selectAllIncidents) {
+
+    selectAllIncidents.addEventListener(
+        'change',
+        function () {
+
+            incidentCheckboxes.forEach(
+                function (checkbox) {
+
+                    checkbox.checked =
+                        selectAllIncidents.checked;
+
+                }
+            );
+
+            updateIncidentSelection();
+
+        }
+    );
+
+}
+
+
+incidentCheckboxes.forEach(
+    function (checkbox) {
+
+        checkbox.addEventListener(
+            'change',
+            updateIncidentSelection
+        );
+
+    }
+);
+
+
+document
+    .getElementById(
+        'incident-delete-form'
+    )
+    ?.addEventListener(
+        'submit',
+        function (event) {
+
+            const selected =
+                document.querySelectorAll(
+                    '.incident-select:checked'
+                );
+
+            if (selected.length === 0) {
+
+                event.preventDefault();
+
+                return;
+
+            }
+
+            if (
+                !confirm(
+                    'Delete ' +
+                    selected.length +
+                    ' selected incident' +
+                    (
+                        selected.length === 1
+                            ? ''
+                            : 's'
+                    ) +
+                    '?'
+                )
+            ) {
+
+                event.preventDefault();
+
+            }
+
+        }
+    );
+
+
+updateIncidentSelection();
+
+</script>
 
 
 <footer class="footer">

@@ -432,8 +432,19 @@ def build_incidents(
 
     raw = []
 
+    #
+    # Multiple incidents may now remain open at the
+    # same time. Each incident has its own active
+    # device/job episodes.
+    #
+    open_incidents = []
+
+    #
+    # Maps job name to:
+    #
+    #     (incident, episode)
+    #
     active = {}
-    current = None
 
     for row in reversed(rows):
 
@@ -445,73 +456,23 @@ def build_incidents(
             devices
         )
 
+        timestamp = row["timestamp"]
+
         if row["state"] == "DOWN":
 
-            if current is None:
-
-                current = {
-                    "start": row["timestamp"],
-                    "end": None,
-                    "objects": set(),
-                    "object_types": {},
-                    "networks": set(),
-                    "episodes": []
-                }
-
-            if name not in active:
-
-                episode = create_episode(
-                    row,
-                    networks,
-                    devices
-                )
-
-                active[name] = episode
-
-                current["episodes"].append(
-                    episode
-                )
-
-            current["objects"].add(
-                display_name
-            )
-
-            current["object_types"][
-                display_name
-            ] = job_type
-
-            network = network_from_name(
-                name,
-                networks,
-                devices
-            )
-
-            if network:
-
-                current["networks"].add(
-                    network
-                )
-
-        elif row["state"] == "UP":
-
+            #
+            # Ignore duplicate DOWN events while this
+            # particular job is already active.
+            #
             if name in active:
 
-                episode = active.pop(
-                    name
-                )
+                incident, episode = active[name]
 
-                finalize_episode(
-                    episode,
-                    row["timestamp"]
-                )
-
-            if current:
-
-                current["objects"].add(
+                incident["objects"].add(
                     display_name
                 )
 
-                current["object_types"][
+                incident["object_types"][
                     display_name
                 ] = job_type
 
@@ -523,63 +484,250 @@ def build_incidents(
 
                 if network:
 
-                    current["networks"].add(
+                    incident["networks"].add(
                         network
                     )
 
-            if current and not active:
+                continue
 
-                current["end"] = row["timestamp"]
+            timestamp_dt = parse_timestamp(
+                timestamp
+            )
+
+            candidate = None
+
+            #
+            # Find the most recently started open
+            # incident that is still inside the
+            # existing merge window.
+            #
+            for incident in reversed(
+                open_incidents
+            ):
+
+                incident_start = parse_timestamp(
+                    incident["start"]
+                )
+
+                delay = (
+                    timestamp_dt
+                    -
+                    incident_start
+                )
+
+                if (
+                    delay.total_seconds()
+                    < 0
+                ):
+
+                    continue
+
+                if (
+                    delay
+                    <= MERGE_WINDOW
+                ):
+
+                    candidate = incident
+                    break
+
+            #
+            # No suitable open incident:
+            # create a completely new one.
+            #
+            if candidate is None:
+
+                candidate = {
+                    "start": timestamp,
+                    "end": None,
+                    "objects": set(),
+                    "object_types": {},
+                    "networks": set(),
+                    "episodes": []
+                }
+
+                open_incidents.append(
+                    candidate
+                )
+
+            episode = create_episode(
+                row,
+                networks,
+                devices
+            )
+
+            active[name] = (
+                candidate,
+                episode
+            )
+
+            candidate["episodes"].append(
+                episode
+            )
+
+            candidate["objects"].add(
+                display_name
+            )
+
+            candidate["object_types"][
+                display_name
+            ] = job_type
+
+            network = network_from_name(
+                name,
+                networks,
+                devices
+            )
+
+            if network:
+
+                candidate["networks"].add(
+                    network
+                )
+
+        elif row["state"] == "UP":
+
+            #
+            # A recovery belongs to the incident
+            # that contains the corresponding active
+            # episode.
+            #
+            if name not in active:
+
+                continue
+
+            incident, episode = active.pop(
+                name
+            )
+
+            finalize_episode(
+                episode,
+                timestamp
+            )
+
+            incident["objects"].add(
+                display_name
+            )
+
+            incident["object_types"][
+                display_name
+            ] = job_type
+
+            network = network_from_name(
+                name,
+                networks,
+                devices
+            )
+
+            if network:
+
+                incident["networks"].add(
+                    network
+                )
+
+            #
+            # Determine whether this incident still
+            # contains any active episodes.
+            #
+            still_active = any(
+                item[0] is incident
+                for item in active.values()
+            )
+
+            if not still_active:
+
+                incident["end"] = timestamp
 
                 start = parse_timestamp(
-                    current["start"]
+                    incident["start"]
                 )
 
                 end = parse_timestamp(
-                    current["end"]
+                    incident["end"]
                 )
 
-                current["duration"] = int(
-                    (end - start).total_seconds()
+                incident["duration"] = int(
+                    (
+                        end - start
+                    ).total_seconds()
                 )
 
                 analyze_incident(
-                    current
+                    incident
                 )
+
+                if incident in open_incidents:
+
+                    open_incidents.remove(
+                        incident
+                    )
 
                 raw.append(
-                    current
+                    incident
                 )
 
-                current = None
+    #
+    # Any incident that is still open remains ACTIVE.
+    #
+    for incident in open_incidents:
 
-    if current and active:
+        if incident in raw:
 
-        current["end"] = current["episodes"][-1]["start"]
+            continue
 
-        start = parse_timestamp(
-            current["start"]
-        )
+        if incident.get("episodes"):
 
-        end = parse_timestamp(
-            current["end"]
-        )
+            active_episodes = [
+                episode
+                for episode in incident["episodes"]
+                if episode.get("end") is None
+            ]
 
-        current["duration"] = int(
-            (end - start).total_seconds()
-        )
+            if active_episodes:
 
-        analyze_incident(
-            current
-        )
+                incident["end"] = (
+                    active_episodes[-1]["start"]
+                )
 
-        raw.append(
-            current
-        )
+            else:
+
+                incident["end"] = (
+                    incident["episodes"][-1]["end"]
+                )
+
+            start = parse_timestamp(
+                incident["start"]
+            )
+
+            end = parse_timestamp(
+                incident["end"]
+            )
+
+            incident["duration"] = int(
+                (
+                    end - start
+                ).total_seconds()
+            )
+
+            analyze_incident(
+                incident
+            )
+
+            raw.append(
+                incident
+            )
 
     if not raw:
 
         return []
+
+    #
+    # Multiple incidents can finish in a different
+    # order than they started. Sort them before the
+    # existing merge pass.
+    #
+    raw.sort(
+        key=lambda incident: incident["start"]
+    )
 
     incidents = [
         raw[0]
