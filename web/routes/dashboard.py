@@ -85,6 +85,7 @@ def build_network_status(rows):
 
     configured_networks = config.get_networks()
     configured_devices = config.get_devices()
+    settings = config.load_settings()
 
     for network in configured_networks:
 
@@ -136,7 +137,30 @@ def build_network_status(rows):
                 "devices": [],
             }
 
+        network_config = next(
+            (
+                network
+                for network in configured_networks
+                if network.get("name") == network_name
+            ),
+            None
+        )
+
+        row = dict(row)
+
         if job_type == "gateway":
+
+            if network_config is not None:
+
+                row["target_name"] = network_config.get(
+                    "gateway_name",
+                    "Gateway"
+                )
+
+                row["target_ip"] = network_config.get(
+                    "gateway",
+                    ""
+                )
 
             networks[
                 network_name
@@ -144,11 +168,34 @@ def build_network_status(rows):
 
         elif job_type == "internet":
 
+            internet_settings = settings.get(
+                "internet",
+                {}
+            )
+
+            targets = internet_settings.get(
+                "targets",
+                []
+            )
+
+            row["targets"] = targets
+
             networks[
                 network_name
             ]["internet"] = row
 
         elif job_type == "dns":
+
+            if network_config is not None:
+
+                dns_servers = network_config.get(
+                    "dns",
+                    []
+                )
+
+                if dns_servers:
+
+                    row["target_ip"] = dns_servers[0]
 
             networks[
                 network_name
@@ -245,6 +292,7 @@ def get_active_incidents(
             )
 
     return active
+
 
 def overall_health(
     service_up,

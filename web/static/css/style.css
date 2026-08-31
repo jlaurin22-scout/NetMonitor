@@ -377,6 +377,16 @@ body {
 }
 
 
+.check-target {
+
+    margin-top: 3px;
+
+    font-size: 12px;
+
+    color: #6b7280;
+
+}
+
 .check-state {
 
     display: flex;

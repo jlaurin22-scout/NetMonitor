@@ -208,9 +208,39 @@
                     data-check="gateway"
                 >
 
-                    <span>
-                        Gateway
-                    </span>
+                    <div>
+
+                        <strong>
+                            Gateway
+                        </strong>
+
+                        {% if network.gateway.target_name or network.gateway.target_ip %}
+
+                        <div class="check-target">
+
+                            {% if network.gateway.target_name %}
+
+                            {{ network.gateway.target_name }}
+
+                            {% endif %}
+
+                            {% if network.gateway.target_name and network.gateway.target_ip %}
+
+                            ·
+
+                            {% endif %}
+
+                            {% if network.gateway.target_ip %}
+
+                            {{ network.gateway.target_ip }}
+
+                            {% endif %}
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
 
                     <span
                         class="
@@ -241,9 +271,23 @@
                     data-check="internet"
                 >
 
-                    <span>
-                        Internet
-                    </span>
+                    <div>
+
+                        <strong>
+                            Internet
+                        </strong>
+
+                        {% if network.internet.targets %}
+
+                        <div class="check-target">
+
+                            {{ network.internet.targets | join(", ") }}
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
 
                     <span
                         class="
@@ -274,9 +318,23 @@
                     data-check="dns"
                 >
 
-                    <span>
-                        DNS
-                    </span>
+                    <div>
+
+                        <strong>
+                            DNS
+                        </strong>
+
+                        {% if network.dns.target_ip %}
+
+                        <div class="check-target">
+
+                            {{ network.dns.target_ip }}
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
 
                     <span
                         class="
