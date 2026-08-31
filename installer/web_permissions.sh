@@ -43,7 +43,7 @@ EOF
         "$PROJECT_DIR"
 
     setfacl \
-        -m u:$WEB_USER:--x \
+        -m u:$WEB_USER:rwx \
         "$DATA_DIR"
 
     setfacl \
