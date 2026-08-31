@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Scout Network Monitor - Reports
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Scout Network Monitor
+        </div>
+
+        <div class="brand-site">
+
+            {{ customer }}
+
+            {% if address %}
+                <span class="separator">—</span>
+                {{ address }}
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="account-area">
+
+        <span class="account-user">
+            {{ current_user.username }}
+        </span>
+
+        <span class="account-role">
+            {{ current_user.role|upper }}
+        </span>
+
+        <a
+            class="account-logout"
+            href="{{ url_for('auth.logout') }}"
+        >
+            Logout
+        </a>
+
+    </div>
+
+</header>
+
+
+<nav class="navigation">
+
+    <a href="/">
+        Dashboard
+    </a>
+
+    <a href="/configuration">
+        Configuration
+    </a>
+
+    <a href="/events/">
+        Events
+    </a>
+
+    <a href="/incidents/">
+        Incidents
+    </a>
+
+    <a href="/analysis/">
+        Analysis
+    </a>
+
+    <a
+        href="/reports/"
+        class="active"
+    >
+        Reports
+    </a>
+
+</nav>
+
+
+<main class="dashboard">
+
+
+    <section class="card">
+
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:20px;
+            "
+        >
+
+            <div>
+
+                <div class="section-heading">
+                    Network Analysis Report
+                </div>
+
+                <p>
+                    Customer-facing report based on the
+                    monitoring events recorded during the
+                    analysis period.
+                </p>
+
+            </div>
+
+            <div>
+
+                <a
+                    href="{{ url_for('reports.download') }}"
+                    class="button"
+                >
+                    Download PDF
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Customer Information
+        </div>
+
+        <table>
+
+            <tr>
+                <th>Customer</th>
+                <td>{{ customer }}</td>
+            </tr>
+
+            <tr>
+                <th>Site / Address</th>
+                <td>
+                    {% if address %}
+                        {{ address }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Analysis Start</th>
+                <td>
+                    {{
+                        report.incidents[0].start
+                        if report.incidents
+                        else "-"
+                    }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Analysis End</th>
+                <td>
+                    {{
+                        report.incidents[-1].end
+                        if report.incidents
+                        else "-"
+                    }}
+                </td>
+            </tr>
+
+        </table>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Executive Summary
+        </div>
+
+        {% if services["MAJOR SERVICE OUTAGE"]["count"] %}
+
+            <h3>
+                Major service interruptions were recorded
+                during the analysis period.
+            </h3>
+
+        {% elif report.service_outages %}
+
+            <h3>
+                Service interruptions were recorded
+                during the analysis period.
+            </h3>
+
+        {% elif report.single_device + report.multi_device %}
+
+            <h3>
+                The network services remained available,
+                with device incidents recorded.
+            </h3>
+
+        {% else %}
+
+            <h3>
+                No service or device incidents were
+                recorded during the analysis period.
+            </h3>
+
+        {% endif %}
+
+        <p>
+            Watchdog recorded
+            <strong>
+                {{ report.total_incidents }}
+            </strong>
+            incident period(s) during the analysis period.
+        </p>
+
+        <p>
+            <strong>
+                {{ report.service_outages|length }}
+            </strong>
+            network service outage event(s) and
+            <strong>
+                {{
+                    report.single_device
+                    + report.multi_device
+                }}
+            </strong>
+            device incident(s) were recorded.
+        </p>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Service Availability
+        </div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Classification</th>
+                    <th>Events</th>
+                    <th>Total Downtime</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+
+                    <td>
+                        Minor Interruption
+                    </td>
+
+                    <td>
+                        {{
+                            services[
+                                "MINOR INTERRUPTION"
+                            ].count
+                        }}
+                    </td>
+
+                    <td>
+                        {{
+                            format_duration(
+                                services[
+                                    "MINOR INTERRUPTION"
+                                ].downtime
+                            )
+                        }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td>
+                        Service Outage
+                    </td>
+
+                    <td>
+                        {{
+                            services[
+                                "SERVICE OUTAGE"
+                            ].count
+                        }}
+                    </td>
+
+                    <td>
+                        {{
+                            format_duration(
+                                services[
+                                    "SERVICE OUTAGE"
+                                ].downtime
+                            )
+                        }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td>
+                        Major Service Outage
+                    </td>
+
+                    <td>
+                        {{
+                            services[
+                                "MAJOR SERVICE OUTAGE"
+                            ].count
+                        }}
+                    </td>
+
+                    <td>
+                        {{
+                            format_duration(
+                                services[
+                                    "MAJOR SERVICE OUTAGE"
+                                ].downtime
+                            )
+                        }}
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        <p>
+            <small>
+                Minor interruptions are events shorter than
+                30 seconds. Service outages last from
+                30 seconds through 5 minutes. Major service
+                outages exceed 5 minutes.
+            </small>
+        </p>
+
+    </section>
+
+
+    {% if report.device_reliability %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Conclusion
+        </div>
+
+        <p>
+            During the analysis period, Watchdog recorded
+            <strong>
+                {{ report.service_outages|length }}
+            </strong>
+            network service outage event(s), with a combined
+            recorded service downtime of
+            <strong>
+                {{
+                    format_duration(
+                        report.total_service_downtime
+                    )
+                }}
+            </strong>.
+        </p>
+
+        <p>
+            Monitored devices recorded a combined downtime of
+            <strong>
+                {{
+                    format_duration(
+                        report.total_device_downtime
+                    )
+                }}
+            </strong>.
+        </p>
+
+        <p>
+            This report documents the events observed by the
+            monitoring system during the analysis period.
+        </p>
+
+        <p>
+            <small>
+                The classifications and timings in this report
+                are based on the monitoring checks configured
+                on the Scout Network Monitor. They describe
+                observed availability events and do not
+                establish the physical or technical root cause
+                of an outage.
+            </small>
+        </p>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Report Actions
+        </div>
+
+        <p>
+            Review the report above before providing it to
+            the customer.
+        </p>
+
+        <a
+            href="{{ url_for('reports.download') }}"
+            class="button"
+        >
+            Generate / Download Full Report PDF
+        </a>
+
+        <a
+            href="{{ url_for('reports.download_device_summary') }}"
+            class="button"
+            style="margin-left:10px;"
+        >
+            Generate / Download Device Summary PDF
+        </a>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Device Reliability
+        </div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Device</th>
+                    <th>Reliability</th>
+                    <th>Health</th>
+                    <th>Outages</th>
+                    <th>Downtime</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for device in report.device_reliability %}
+
+                <tr>
+
+                    <td>
+                        {{ device.device }}
+                    </td>
+
+                    <td>
+                        {{ device.score }}%
+                    </td>
+
+                    <td>
+                        {{ device.health }}
+                    </td>
+
+                    <td>
+                        {{ device.outages }}
+                    </td>
+
+                    <td>
+                        {{
+                            format_duration(
+                                device.downtime
+                            )
+                        }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+    {% endif %}
+
+
+    {% if report.service_outages %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Service Outage History
+        </div>
+
+        {% for outage in report.service_outages %}
+
+        <div
+            style="
+                border-bottom:1px solid #ddd;
+                padding:15px 0;
+            "
+        >
+
+            <h3>
+                Event {{ loop.index }}
+                —
+                {{
+                    classify_service_outage(
+                        outage.duration
+                    )
+                }}
+            </h3>
+
+            <table>
+
+                <tr>
+                    <th>Start</th>
+                    <td>
+                        {{ format_timestamp(outage.start) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>End</th>
+                    <td>
+                        {{ format_timestamp(outage.end) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Duration</th>
+                    <td>
+                        {{
+                            format_duration(
+                                outage.duration
+                            )
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Network</th>
+                    <td>
+                        {{
+                            outage.networks|join(", ")
+                            if outage.networks
+                            else "-"
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Affected Services</th>
+                    <td>
+                        {{
+                            outage.objects|join(", ")
+                            if outage.objects
+                            else "-"
+                        }}
+                    </td>
+                </tr>
+
+            </table>
+
+        </div>
+
+        {% endfor %}
+
+    </section>
+
+    {% endif %}
+
+
+    {% set device_incidents = [] %}
+
+    {% for incident in report.incidents %}
+
+        {% set device_objects = [] %}
+
+        {% for object_name in incident.objects %}
+
+            {% if incident.object_types.get(object_name)
+                == "device" %}
+
+                {% set ignored =
+                    device_objects.append(object_name) %}
+
+            {% endif %}
+
+        {% endfor %}
+
+        {% if device_objects %}
+
+            {% set ignored =
+                device_incidents.append(
+                    {
+                        "incident": incident,
+                        "devices": device_objects
+                    }
+                )
+            %}
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    {% if device_incidents %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Device Incident History
+        </div>
+
+        {% for item in device_incidents %}
+
+        <div
+            style="
+                border-bottom:1px solid #ddd;
+                padding:15px 0;
+            "
+        >
+
+            <h3>
+                Device Event {{ loop.index }}
+            </h3>
+
+            <table>
+
+                <tr>
+                    <th>Start</th>
+                    <td>
+                        {{
+                            format_timestamp(
+                                item.incident.start
+                            )
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>End</th>
+                    <td>
+                        {{
+                            format_timestamp(
+                                item.incident.end
+                            )
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Duration</th>
+                    <td>
+                        {{
+                            format_duration(
+                                item.incident.duration
+                            )
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Network</th>
+                    <td>
+                        {{
+                            item.incident.networks|join(", ")
+                            if item.incident.networks
+                            else "-"
+                        }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Affected Device(s)</th>
+                    <td>
+                        {{ item.devices|join(", ") }}
+                    </td>
+                </tr>
+
+            </table>
+
+        </div>
+
+        {% endfor %}
+
+    </section>
+
+    {% endif %}
+
+
+    
+
+
+    
+
+</main>
+
+</body>
+
+</html>

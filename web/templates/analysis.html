@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Scout Network Monitor - Analysis
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Scout Network Monitor
+        </div>
+
+        <div class="brand-site">
+
+            {{ customer }}
+
+            {% if address %}
+                <span class="separator">—</span>
+                {{ address }}
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="account-area">
+        <span class="account-user">{{ current_user.username }}</span>
+        <span class="account-role">{{ current_user.role|upper }}</span>
+        <a class="account-logout" href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
+
+</header>
+
+
+<nav class="navigation">
+
+    <a href="/">
+        Dashboard
+    </a>
+
+    <a href="/configuration">
+        Configuration
+    </a>
+
+    <a href="/events/">
+        Events
+    </a>
+
+    <a href="/incidents/">
+        Incidents
+    </a>
+
+    <a
+        href="/analysis/"
+        class="active"
+    >
+        Analysis
+    </a>
+
+    <a href="/reports/">
+        Reports
+    </a>
+
+</nav>
+
+
+<main class="dashboard">
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Network Analysis
+        </div>
+
+        <div class="health-panel">
+
+            <div>
+
+                <div class="panel-label">
+                    Overall Health
+                </div>
+
+                <div class="health-value">
+
+                    <span class="health-label">
+                        {{ report.health }}
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    {% if report.executive_summary.headline %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Scout's Assessment
+        </div>
+
+        <h3>
+            {{ report.executive_summary.headline }}
+        </h3>
+
+        {% for assessment in report.executive_summary.assessment %}
+
+        <p>
+            {{ assessment }}
+        </p>
+
+        {% endfor %}
+
+    </section>
+
+    {% endif %}
+
+
+    {% if report.executive_summary.investigation_order %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Recommended Investigation Order
+        </div>
+
+        <ol>
+
+            {% for item in report.executive_summary.investigation_order %}
+
+            <li>
+                {{ item }}
+            </li>
+
+            {% endfor %}
+
+        </ol>
+
+    </section>
+
+    {% endif %}
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Network Statistics
+        </div>
+
+        <table>
+
+            <tr>
+                <th>Incidents</th>
+                <td>{{ report.total_incidents }}</td>
+            </tr>
+
+            <tr>
+                <th>Infrastructure Incidents</th>
+                <td>{{ report.infrastructure_events|length }}</td>
+            </tr>
+
+            <tr>
+                <th>Major Outages</th>
+                <td>{{ report.major_outages }}</td>
+            </tr>
+
+            <tr>
+                <th>Device Incidents</th>
+                <td>
+                    {{
+                        report.single_device
+                        + report.multi_device
+                    }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Devices Monitored</th>
+                <td>{{ report.devices_monitored }}</td>
+            </tr>
+
+            {% if report.device_counter %}
+
+            <tr>
+
+                <th>
+                    Worst Device
+                </th>
+
+                <td>
+
+                    {% set worst =
+                        report.device_counter.most_common(1)[0]
+                    %}
+
+                    {{ worst[0] }}
+                    ({{ worst[1] }})
+
+                </td>
+
+            </tr>
+
+            {% endif %}
+
+        </table>
+
+    </section>
+
+
+    <section class="card">
+
+        <div class="section-heading">
+            Device Reliability
+        </div>
+
+        {% if report.device_reliability %}
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Device</th>
+                    <th>Score</th>
+                    <th>Health</th>
+                    <th>Outages</th>
+                    <th>Downtime</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for device in report.device_reliability %}
+
+                <tr>
+
+                    <td>
+                        {{ device.device }}
+                    </td>
+
+                    <td>
+                        {{ device.score }}%
+                    </td>
+
+                    <td>
+                        {{ device.health }}
+                    </td>
+
+                    <td>
+                        {{ device.outages }}
+                    </td>
+
+                    <td>
+
+                        {% set seconds = device.downtime %}
+
+                        {% set hours = seconds // 3600 %}
+
+                        {% set minutes =
+                            (seconds % 3600) // 60
+                        %}
+
+                        {% set remaining =
+                            seconds % 60
+                        %}
+
+                        {% if hours %}
+                            {{ hours }}h
+                            {{ minutes }}m
+                            {{ remaining }}s
+                        {% elif minutes %}
+                            {{ minutes }}m
+                            {{ remaining }}s
+                        {% else %}
+                            {{ remaining }}s
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+        <p>
+            No reliability data available.
+        </p>
+
+        {% endif %}
+
+    </section>
+
+
+    {% if report.findings %}
+
+    <section class="card">
+
+        <div class="section-heading">
+            Findings
+        </div>
+
+        {% for finding in report.findings %}
+
+        <div class="finding">
+
+            <h3>
+                {{ finding.title }}
+            </h3>
+
+            <p>
+                <strong>Priority:</strong>
+                {{ finding.priority }}
+            </p>
+
+            <p>
+                <strong>Confidence:</strong>
+                {{ finding.confidence }}%
+            </p>
+
+            {% if finding.device %}
+
+            <p>
+                <strong>Device:</strong>
+                {{ finding.device }}
+            </p>
+
+            {% endif %}
+
+            {% if finding.count is defined %}
+
+            <p>
+                <strong>Occurrences:</strong>
+                {{ finding.count }}
+            </p>
+
+            {% endif %}
+
+            {% if finding.evidence %}
+
+            <ul>
+
+                {% for evidence in finding.evidence %}
+
+                <li>
+                    {{ evidence }}
+                </li>
+
+                {% endfor %}
+
+            </ul>
+
+            {% endif %}
+
+            {% if finding.cause %}
+
+            <p>
+                <strong>Cause:</strong>
+                {{ finding.cause }}
+            </p>
+
+            {% endif %}
+
+            {% if finding.action %}
+
+            <p>
+                <strong>Recommended action:</strong>
+                {{ finding.action }}
+            </p>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </section>
+
+    {% endif %}
+
+
+</main>
+
+
+</body>
+
+</html>

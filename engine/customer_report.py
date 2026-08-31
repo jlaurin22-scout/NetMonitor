@@ -9,7 +9,10 @@ from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import (
+    getSampleStyleSheet,
+    ParagraphStyle
+)
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -17,6 +20,7 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
+    KeepTogether,
 )
 
 
@@ -341,6 +345,7 @@ def make_table(
 
     return table
 
+
 def add_page_number(canvas, document):
 
     canvas.saveState()
@@ -369,10 +374,25 @@ def add_page_number(canvas, document):
     canvas.restoreState()
 
 
+def classify_service_outage(duration):
+
+    duration = int(duration or 0)
+
+    if duration < 30:
+
+        return "MINOR INTERRUPTION"
+
+    if duration <= 300:
+
+        return "SERVICE OUTAGE"
+
+    return "MAJOR SERVICE OUTAGE"
+
+
 def service_summary(service_outages):
 
     summary = {
-        "BRIEF INTERRUPTION": {
+        "MINOR INTERRUPTION": {
             "count": 0,
             "downtime": 0,
         },
@@ -384,36 +404,27 @@ def service_summary(service_outages):
             "count": 0,
             "downtime": 0,
         },
-        "MAJOR OUTAGE": {
-            "count": 0,
-            "downtime": 0,
-        },
     }
 
     for outage in service_outages:
 
-        severity = outage.get(
-            "severity",
-            "SERVICE OUTAGE"
-        )
-
-        if severity not in summary:
-
-            summary[severity] = {
-                "count": 0,
-                "downtime": 0,
-            }
-
-        summary[severity]["count"] += 1
-
-        summary[severity]["downtime"] += int(
+        duration = int(
             outage.get(
                 "duration",
                 0
             )
         )
 
+        classification = classify_service_outage(
+            duration
+        )
+
+        summary[classification]["count"] += 1
+
+        summary[classification]["downtime"] += duration
+
     return summary
+
 
 def safe_filename(value):
 
@@ -440,6 +451,7 @@ def safe_filename(value):
     )
 
     return value or "Customer"
+
 
 def generate_customer_report(
     report,
@@ -489,7 +501,11 @@ def generate_customer_report(
 
         output_path = os.path.join(
             REPORT_DIR,
-            f"{customer_filename}_Network_Analysis_Report_{date_part}.pdf"
+            (
+                f"{customer_filename}"
+                f"_Network_Analysis_Report_"
+                f"{date_part}.pdf"
+            )
         )
 
     output_directory = os.path.dirname(
@@ -517,10 +533,6 @@ def generate_customer_report(
     )
 
     story = []
-
-    #
-    # Report header
-    #
 
     story.append(
         Spacer(1, 8 * mm)
@@ -644,10 +656,6 @@ def generate_customer_report(
         )
     )
 
-    #
-    # Executive Summary
-    #
-
     story.append(
         Paragraph(
             "Executive Summary",
@@ -687,28 +695,19 @@ def generate_customer_report(
         ]["count"]
     )
 
-    major_outages = (
-        service_counts[
-            "MAJOR OUTAGE"
-        ]["count"]
-    )
-
-    if (
-        major_service_outages
-        or
-        major_outages
-    ):
+    if major_service_outages:
 
         headline = (
-            "Significant service interruptions "
-            "were recorded during the analysis period."
+            "Major service interruptions "
+            "were recorded during the "
+            "analysis period."
         )
 
     elif service_outages:
 
         headline = (
-            "Service interruptions were recorded "
-            "during the analysis period."
+            "Service interruptions were "
+            "recorded during the analysis period."
         )
 
     elif device_incidents:
@@ -754,10 +753,6 @@ def generate_customer_report(
         )
     )
 
-    #
-    # Service Availability
-    #
-
     story.append(
         Paragraph(
             "Service Availability",
@@ -772,15 +767,15 @@ def generate_customer_report(
             "Total Downtime",
         ],
         [
-            "Brief Interruption",
+            "Minor Interruption",
             str(
                 service_counts[
-                    "BRIEF INTERRUPTION"
+                    "MINOR INTERRUPTION"
                 ]["count"]
             ),
             format_duration(
                 service_counts[
-                    "BRIEF INTERRUPTION"
+                    "MINOR INTERRUPTION"
                 ]["downtime"]
             ),
         ],
@@ -810,19 +805,6 @@ def generate_customer_report(
                 ]["downtime"]
             ),
         ],
-        [
-            "Major Outage",
-            str(
-                service_counts[
-                    "MAJOR OUTAGE"
-                ]["count"]
-            ),
-            format_duration(
-                service_counts[
-                    "MAJOR OUTAGE"
-                ]["downtime"]
-            ),
-        ],
     ]
 
     story.append(
@@ -843,20 +825,14 @@ def generate_customer_report(
     story.append(
         Paragraph(
             (
-                "<b>Classification:</b> Brief interruptions "
+                "<b>Classification:</b> Minor interruptions "
                 "are events shorter than 30 seconds. Service "
                 "outages last from 30 seconds through 5 minutes. "
-                "Major service outages exceed 5 minutes. A "
-                "major outage is recorded when multiple critical "
-                "network services fail during the same incident."
+                "Major service outages exceed 5 minutes."
             ),
             styles["Small"]
         )
     )
-
-    #
-    # Device Reliability
-    #
 
     reliability = report.get(
         "device_reliability",
@@ -927,10 +903,6 @@ def generate_customer_report(
             )
         )
 
-    #
-    # Service Outage History
-    #
-
     if service_outages:
 
         story.append(
@@ -955,19 +927,19 @@ def generate_customer_report(
                 []
             )
 
-            severity = outage.get(
-                "severity",
-                "SERVICE OUTAGE"
+            severity = classify_service_outage(
+                outage.get(
+                    "duration",
+                    0
+                )
             )
 
-            story.append(
-                Paragraph(
-                    (
-                        f"<b>Event {number} — "
-                        f"{severity}</b>"
-                    ),
-                    styles["SubHeading"]
-                )
+            event_heading = Paragraph(
+                (
+                    f"<b>Event {number} — "
+                    f"{severity}</b>"
+                ),
+                styles["SubHeading"]
             )
 
             outage_data = [
@@ -1010,24 +982,27 @@ def generate_customer_report(
                 ],
             ]
 
+            outage_table = make_table(
+                outage_data,
+                widths=[
+                    42 * mm,
+                    125 * mm,
+                ],
+                header=False,
+            )
+
             story.append(
-                make_table(
-                    outage_data,
-                    widths=[
-                        42 * mm,
-                        125 * mm,
-                    ],
-                    header=False,
+                KeepTogether(
+                    [
+                        event_heading,
+                        outage_table,
+                    ]
                 )
             )
 
             story.append(
                 Spacer(1, 3 * mm)
             )
-
-    #
-    # Device Incident History
-    #
 
     device_incident_events = []
 
@@ -1122,31 +1097,32 @@ def generate_customer_report(
                 ],
             ]
 
-            story.append(
-                Paragraph(
-                    f"<b>Device Event {number}</b>",
-                    styles["SubHeading"]
-                )
+            device_event_heading = Paragraph(
+                f"<b>Device Event {number}</b>",
+                styles["SubHeading"]
+            )
+
+            device_event_table = make_table(
+                incident_data,
+                widths=[
+                    42 * mm,
+                    125 * mm,
+                ],
+                header=False,
             )
 
             story.append(
-                make_table(
-                    incident_data,
-                    widths=[
-                        42 * mm,
-                        125 * mm,
-                    ],
-                    header=False,
+                KeepTogether(
+                    [
+                        device_event_heading,
+                        device_event_table,
+                    ]
                 )
             )
 
             story.append(
                 Spacer(1, 3 * mm)
             )
-
-    #
-    # Conclusion
-    #
 
     story.append(
         Paragraph(
@@ -1179,7 +1155,8 @@ def generate_customer_report(
         f"During the analysis period, Watchdog recorded "
         f"{len(service_outages)} network service outage "
         f"event(s), with a combined recorded service "
-        f"downtime of {format_duration(total_service_downtime)}. "
+        f"downtime of "
+        f"{format_duration(total_service_downtime)}. "
         f"Monitored devices recorded a combined downtime "
         f"of {format_duration(total_device_downtime)}. "
         "This report documents the events observed by the "
