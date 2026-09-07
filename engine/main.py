@@ -213,6 +213,7 @@ def main():
             "network": network,
             "ip": device["ip"],
             "checks": device["checks"],
+            "schedule_id": device.get("schedule_id"),
             "interval": settings["monitor"]["device_interval"]
         })
 

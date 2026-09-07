@@ -3,11 +3,13 @@
 import json
 import ipaddress
 import os
+from datetime import datetime
 
 
 CUSTOMER_CONFIG = "/etc/netmonitor/netmonitor.json"
 DEVICES_CONFIG = "/etc/netmonitor/devices.json"
 SETTINGS_CONFIG = "/etc/netmonitor/settings.json"
+SCHEDULES_CONFIG = "/etc/netmonitor/schedules.json"
 
 
 def validate_ip(ip):
@@ -364,6 +366,535 @@ def remove_device(device_id):
 
 
 #
+# Availability Schedule Configuration
+#
+
+SCHEDULE_DAYS = (
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+)
+
+
+def _default_schedule_days():
+
+    return {
+        day: None
+        for day in SCHEDULE_DAYS
+    }
+
+
+def _validate_schedule_time(value, allow_24=False):
+
+    if not isinstance(value, str):
+
+        raise Exception(
+            "Schedule time must be in HH:MM format."
+        )
+
+    if value == "24:00":
+
+        if allow_24:
+
+            return
+
+        raise Exception(
+            "Schedule start time cannot be 24:00."
+        )
+
+    try:
+
+        datetime.strptime(
+            value,
+            "%H:%M"
+        )
+
+    except ValueError:
+
+        raise Exception(
+            f"Invalid schedule time: {value}. Expected HH:MM."
+        )
+
+def _validate_schedule_days(days):
+
+    if not isinstance(days, dict):
+
+        raise Exception(
+            "Schedule days must be an object."
+        )
+
+    for day in SCHEDULE_DAYS:
+
+        value = days.get(
+            day
+        )
+
+        #
+        # None means the device is expected offline
+        # for the entire day.
+        #
+        if value is None:
+
+            continue
+
+        if not isinstance(value, dict):
+
+            raise Exception(
+                f"Invalid schedule definition for {day}."
+            )
+
+        if "start" not in value:
+
+            raise Exception(
+                f"Missing start time for {day}."
+            )
+
+        if "end" not in value:
+
+            raise Exception(
+                f"Missing end time for {day}."
+            )
+
+        _validate_schedule_time(
+            value["start"]
+        )
+
+        _validate_schedule_time(
+            value["end"],
+            allow_24=True
+        )
+
+    #
+    # Do not allow unknown day names.
+    #
+    for day in days:
+
+        if day not in SCHEDULE_DAYS:
+
+            raise Exception(
+                f"Invalid schedule day: {day}"
+            )
+
+
+def load_schedules():
+
+    if not os.path.exists(SCHEDULES_CONFIG):
+
+        data = {
+            "schedules": []
+        }
+
+        save_schedules(data)
+
+        return data
+
+    with open(SCHEDULES_CONFIG, "r") as f:
+
+        data = json.load(f)
+
+    if "schedules" not in data:
+
+        data["schedules"] = []
+
+    return data
+
+
+def save_schedules(data):
+
+    with open(SCHEDULES_CONFIG, "w") as f:
+
+        json.dump(
+            data,
+            f,
+            indent=4
+        )
+
+
+def get_schedules():
+
+    data = load_schedules()
+
+    return data.get(
+        "schedules",
+        []
+    )
+
+
+def get_schedule(schedule_id):
+
+    schedules = get_schedules()
+
+    for schedule in schedules:
+
+        if schedule["id"] == schedule_id:
+
+            return schedule
+
+    raise Exception(
+        "Schedule not found"
+    )
+
+
+def add_schedule(
+    name,
+    days
+):
+
+    name = name.strip()
+
+    if not name:
+
+        raise Exception(
+            "Schedule name cannot be empty."
+        )
+
+    _validate_schedule_days(
+        days
+    )
+
+    data = load_schedules()
+
+    schedules = data.setdefault(
+        "schedules",
+        []
+    )
+
+    for schedule in schedules:
+
+        if schedule["name"].lower() == name.lower():
+
+            raise Exception(
+                f'Schedule "{name}" already exists.'
+            )
+
+    next_id = 1
+
+    if schedules:
+
+        next_id = max(
+            schedule["id"]
+            for schedule in schedules
+        ) + 1
+
+    schedule = {
+        "id": next_id,
+        "name": name,
+        "days": {
+            day: days.get(day)
+            for day in SCHEDULE_DAYS
+        }
+    }
+
+    schedules.append(
+        schedule
+    )
+
+    save_schedules(data)
+
+    return schedule
+
+
+def update_schedule(
+    schedule_id,
+    name,
+    days
+):
+
+    name = name.strip()
+
+    if not name:
+
+        raise Exception(
+            "Schedule name cannot be empty."
+        )
+
+    _validate_schedule_days(
+        days
+    )
+
+    data = load_schedules()
+
+    schedules = data.get(
+        "schedules",
+        []
+    )
+
+    for schedule in schedules:
+
+        if schedule["id"] == schedule_id:
+
+            for existing in schedules:
+
+                if (
+                    existing["id"] != schedule_id
+                    and
+                    existing["name"].lower()
+                    == name.lower()
+                ):
+
+                    raise Exception(
+                        f'Schedule "{name}" already exists.'
+                    )
+
+            schedule["name"] = name
+
+            schedule["days"] = {
+                day: days.get(day)
+                for day in SCHEDULE_DAYS
+            }
+
+            save_schedules(data)
+
+            return schedule
+
+    raise Exception(
+        "Schedule not found"
+    )
+
+
+def remove_schedule(schedule_id):
+
+    data = load_schedules()
+
+    schedules = data.get(
+        "schedules",
+        []
+    )
+
+    #
+    # Do not allow deletion of a schedule that is
+    # currently assigned to a device.
+    #
+    devices = get_devices()
+
+    for device in devices:
+
+        if device.get("schedule_id") == schedule_id:
+
+            raise Exception(
+                f'Schedule {schedule_id} is assigned to device '
+                f'{device["name"]}.'
+            )
+
+    for schedule in schedules:
+
+        if schedule["id"] == schedule_id:
+
+            removed = schedule.copy()
+
+            schedules.remove(
+                schedule
+            )
+
+            save_schedules(data)
+
+            return removed
+
+    raise Exception(
+        "Schedule not found"
+    )
+
+
+def get_device_schedule(device):
+
+    schedule_id = device.get(
+        "schedule_id"
+    )
+
+    #
+    # No schedule means Always Online.
+    #
+    if schedule_id is None:
+
+        return None
+
+    return get_schedule(
+        schedule_id
+    )
+
+
+def get_device_expected_online(
+    device,
+    when=None
+):
+
+    #
+    # Devices without a schedule are always
+    # expected to be online.
+    #
+    schedule_id = device.get(
+        "schedule_id"
+    )
+
+    if schedule_id is None:
+
+        return True
+
+    schedule = get_schedule(
+        schedule_id
+    )
+
+    #
+    # No matching schedule means the device
+    # remains always online for safety.
+    #
+    if schedule is None:
+
+        return True
+
+    if when is None:
+
+        when = datetime.now()
+
+    day = when.strftime(
+        "%A"
+    ).lower()
+
+    period = schedule["days"].get(
+        day
+    )
+
+    current = when.time()
+
+    #
+    # First evaluate the period that starts on the
+    # current day.
+    #
+    if period is not None:
+
+        start = datetime.strptime(
+            period["start"],
+            "%H:%M"
+        ).time()
+
+        #
+        # 24:00 is represented in the configuration as
+        # midnight at the end of the day. Python's time
+        # object cannot represent 24:00.
+        #
+        if period["end"] == "24:00":
+
+            return current >= start
+
+        end = datetime.strptime(
+            period["end"],
+            "%H:%M"
+        ).time()
+
+        #
+        # Normal same-day period.
+        #
+        if start <= end:
+
+            return (
+                current >= start
+                and
+                current < end
+            )
+
+        #
+        # Overnight period.
+        #
+        # Example:
+        # 18:00 -> 02:00
+        #
+        return (
+            current >= start
+            or
+            current < end
+        )
+
+    #
+    # If the current day has no availability period,
+    # check whether the previous day has an overnight
+    # period that continues into the current day.
+    #
+    day_index = SCHEDULE_DAYS.index(
+        day
+    )
+
+    previous_day = SCHEDULE_DAYS[
+        (day_index - 1) % len(SCHEDULE_DAYS)
+    ]
+
+    previous_period = schedule["days"].get(
+        previous_day
+    )
+
+    if previous_period is None:
+
+        return False
+
+    if previous_period["end"] == "24:00":
+
+        return False
+
+    previous_start = datetime.strptime(
+        previous_period["start"],
+        "%H:%M"
+    ).time()
+
+    previous_end = datetime.strptime(
+        previous_period["end"],
+        "%H:%M"
+    ).time()
+
+    #
+    # Only a previous-day overnight period can carry
+    # availability into the current day.
+    #
+    if previous_start <= previous_end:
+
+        return False
+
+    return current < previous_end
+
+def set_device_schedule(
+    device_id,
+    schedule_id
+):
+
+    data = load_devices()
+
+    #
+    # None removes the schedule and restores
+    # Always Online behavior.
+    #
+    if schedule_id is not None:
+
+        get_schedule(
+            schedule_id
+        )
+
+    for device in data["devices"]:
+
+        if device["id"] == device_id:
+
+            if schedule_id is None:
+
+                device.pop(
+                    "schedule_id",
+                    None
+                )
+
+            else:
+
+                device["schedule_id"] = schedule_id
+
+            save_devices(data)
+
+            return device
+
+    raise Exception(
+        "Device not found"
+    )
+
+
+#
 # Settings
 #
 
@@ -473,6 +1004,7 @@ def update_monitoring_intervals(
 
     save_settings(data)
 
+
 def update_dns_lookup(lookup):
 
     lookup = lookup.strip()
@@ -495,6 +1027,7 @@ def update_dns_lookup(lookup):
     save_settings(data)
 
     return lookup
+
 
 def update_ntfy_settings(
     enabled,
@@ -589,6 +1122,7 @@ def get_ntfy_settings():
     if changed:
 
         data["ntfy"] = ntfy
+
         save_settings(data)
 
     return ntfy
@@ -638,6 +1172,7 @@ def test_ntfy(
         )
 
     return True
+
 
 def get_internet_targets():
 
@@ -727,7 +1262,8 @@ def load():
     return {
         "customer": load_customer(),
         "devices": load_devices(),
-        "settings": load_settings()
+        "settings": load_settings(),
+        "schedules": load_schedules()
     }
 
 

@@ -187,6 +187,7 @@ def _device_rows():
         rows.append(
             {
                 "id": device["id"],
+                "schedule_id": device.get("schedule_id"),
                 "name": device["name"],
                 "ip": device["ip"],
                 "network_id": network_id,
@@ -265,6 +266,7 @@ def _render_configuration(page, **context):
         devices=_device_rows(),
         settings=config.load_settings(),
         internet_targets=config.get_internet_targets(),
+        schedules=config.get_schedules(),
         **context
     )
 
@@ -567,6 +569,194 @@ def remove_network(network_id):
         return redirect(
             url_for(
                 "configuration.networks",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route("/schedules")
+def schedules():
+
+    return _render_configuration(
+        "schedules"
+    )
+
+
+@configuration.route(
+    "/schedules/add",
+    methods=["POST"]
+)
+@admin_required
+def add_schedule():
+
+    try:
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        days = {}
+
+        for day in config.SCHEDULE_DAYS:
+
+            closed = (
+                request.form.get(
+                    f"{day}_closed"
+                )
+                == "on"
+            )
+
+            if closed:
+
+                days[day] = None
+
+                continue
+
+            start = request.form.get(
+                f"{day}_start",
+                ""
+            ).strip()
+
+            end = request.form.get(
+                f"{day}_end",
+                ""
+            ).strip()
+
+            days[day] = {
+                "start": start,
+                "end": end
+            }
+
+        config.add_schedule(
+            name,
+            days
+        )
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                message="Availability schedule added successfully."
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/schedules/<int:schedule_id>/edit",
+    methods=["POST"]
+)
+@admin_required
+def edit_schedule(schedule_id):
+
+    selected = config.get_schedule(
+        schedule_id
+    )
+
+    if selected is None:
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                error="Availability schedule not found."
+            )
+        )
+
+    try:
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+        days = {}
+
+        for day in config.SCHEDULE_DAYS:
+
+            closed = (
+                request.form.get(
+                    f"{day}_closed"
+                )
+                == "on"
+            )
+
+            if closed:
+
+                days[day] = None
+
+                continue
+
+            start = request.form.get(
+                f"{day}_start",
+                ""
+            ).strip()
+
+            end = request.form.get(
+                f"{day}_end",
+                ""
+            ).strip()
+
+            days[day] = {
+                "start": start,
+                "end": end
+            }
+
+        config.update_schedule(
+            schedule_id,
+            name,
+            days
+        )
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                message="Availability schedule updated successfully."
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/schedules/<int:schedule_id>/remove",
+    methods=["POST"]
+)
+@admin_required
+def remove_schedule(schedule_id):
+
+    try:
+
+        config.remove_schedule(
+            schedule_id
+        )
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
+                message="Availability schedule removed successfully."
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.schedules",
                 error=str(e)
             )
         )
@@ -1365,7 +1555,24 @@ def add_device():
 
     try:
 
-        config.add_device(
+        schedule_value = request.form.get(
+            "schedule_id",
+            ""
+        ).strip()
+
+        schedule_id = (
+            int(schedule_value)
+            if schedule_value
+            else None
+        )
+
+        if schedule_id is not None:
+
+            config.get_schedule(
+                schedule_id
+            )
+
+        added_device = config.add_device(
             name=request.form.get(
                 "name",
                 ""
@@ -1390,6 +1597,11 @@ def add_device():
                 "monitoring_mode",
                 "normal"
             )
+        )
+
+        config.set_device_schedule(
+            added_device["id"],
+            schedule_id
         )
 
         set_restart_reason(
@@ -1486,6 +1698,23 @@ def edit_device(device_id):
             "normal"
         )
 
+        schedule_value = request.form.get(
+            "schedule_id",
+            ""
+        ).strip()
+
+        new_schedule_id = (
+            int(schedule_value)
+            if schedule_value
+            else None
+        )
+
+        if new_schedule_id is not None:
+
+            config.get_schedule(
+                new_schedule_id
+            )
+
         config.update_device(
             device_id,
             new_name,
@@ -1494,6 +1723,11 @@ def edit_device(device_id):
             request.form.get("snmp") == "on",
             new_network_id,
             new_mode
+        )
+
+        config.set_device_schedule(
+            device_id,
+            new_schedule_id
         )
 
         if (

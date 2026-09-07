@@ -7,6 +7,50 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <style>
+        .schedule-days {
+            display: grid;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .schedule-day {
+            display: grid;
+            grid-template-columns: minmax(100px, 1fr) auto minmax(120px, 1fr) minmax(120px, 1fr);
+            align-items: end;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #d9dee5;
+            border-radius: 6px;
+            background: #fafbfc;
+        }
+
+        .schedule-day > strong {
+            align-self: center;
+        }
+
+        .schedule-day label {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .schedule-day label:first-of-type {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .schedule-day input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 900px) {
+            .schedule-day {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         .speedtest-running {
             display: flex;
             align-items: center;
@@ -119,6 +163,13 @@
                 <small>Open configuration →</small>
             </a>
 
+            <a class="configuration-card {% if page == 'schedules' %}configuration-card-active{% endif %}"
+               href="{{ url_for('configuration.schedules') }}">
+                <strong>Availability Schedules</strong>
+                <span>Reusable device availability schedules</span>
+                <small>Open configuration →</small>
+            </a>
+
             <a class="configuration-card {% if page == 'monitoring' %}configuration-card-active{% endif %}"
                href="{{ url_for('configuration.monitoring') }}">
                 <strong>Monitoring</strong>
@@ -149,6 +200,190 @@
 
         </div>
     </section>
+
+
+    {% if page == 'schedules' %}
+
+    <section class="card configuration-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Availability Schedules</h2>
+                <p>Define when monitored devices are expected to be online.</p>
+            </div>
+
+            {% if current_user.role == 'admin' %}
+
+            <button class="button button-primary"
+                    type="button"
+                    data-open-modal="add-schedule-modal">
+                + Add Schedule
+            </button>
+
+            {% endif %}
+
+        </div>
+
+        {% if request.args.get('message') %}
+
+        <div class="alert alert-success">
+            {{ request.args.get('message') }}
+        </div>
+
+        {% endif %}
+
+        {% if request.args.get('error') %}
+
+        <div class="alert alert-error">
+            {{ request.args.get('error') }}
+        </div>
+
+        {% endif %}
+
+        <div class="empty-state">
+
+            <span class="empty-check">i</span>
+
+            <div>
+                <strong>How Availability Schedules work</strong>
+                <p>
+                    A scheduled device is expected to be online during its
+                    configured availability period. Outside that period,
+                    an offline device is treated as expected and does not
+                    generate an availability incident. Devices without a
+                    schedule remain Always Online.
+                </p>
+            </div>
+
+        </div>
+
+        {% if schedules %}
+
+        <div class="configuration-table-wrap">
+
+            <table class="configuration-table">
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Monday</th>
+                        <th>Tuesday</th>
+                        <th>Wednesday</th>
+                        <th>Thursday</th>
+                        <th>Friday</th>
+                        <th>Saturday</th>
+                        <th>Sunday</th>
+                        <th></th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for schedule in schedules %}
+
+                    <tr>
+
+                        <td>{{ schedule.id }}</td>
+
+                        <td class="table-name">
+                            {{ schedule.name }}
+                        </td>
+
+                        {% for day in [
+                            'monday',
+                            'tuesday',
+                            'wednesday',
+                            'thursday',
+                            'friday',
+                            'saturday',
+                            'sunday'
+                        ] %}
+
+                        <td>
+
+                            {% if schedule.days.get(day) %}
+
+                                {{ schedule.days.get(day).start }}
+                                – {{ schedule.days.get(day).end }}
+
+                            {% else %}
+
+                                <span class="viewer-label">
+                                    Closed
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        {% endfor %}
+
+                        <td class="table-actions">
+
+                            {% if current_user.role == 'admin' %}
+
+                            <button class="button button-small"
+                                    type="button"
+                                    data-edit-schedule='{{ schedule | tojson }}'>
+                                Edit
+                            </button>
+
+                            <form method="post"
+                                  action="{{ url_for('configuration.remove_schedule', schedule_id=schedule.id) }}"
+                                  onsubmit="return confirm('Remove {{ schedule.name | e }}?');">
+
+                                <button class="button button-small button-danger"
+                                        type="submit">
+                                    Remove
+                                </button>
+
+                            </form>
+
+                            {% else %}
+
+                            <span class="viewer-label">
+                                View only
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <span class="empty-check">✓</span>
+
+            <div>
+                <strong>No availability schedules configured</strong>
+                <p>
+                    Add a schedule when some monitored devices are only
+                    expected to be online during specific periods.
+                </p>
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+    {% endif %}
 
 
     {% if page == 'customer' %}
@@ -1679,6 +1914,260 @@
 
 
 <div class="modal"
+     id="add-schedule-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="add-schedule-modal">
+    </div>
+
+    <div class="modal-panel">
+
+        <div class="modal-heading">
+
+            <div>
+                <h2>Add Availability Schedule</h2>
+                <p>Define the expected online period for each day.</p>
+            </div>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="add-schedule-modal">
+                ×
+            </button>
+
+        </div>
+
+        <form method="post"
+              action="{{ url_for('configuration.add_schedule') }}">
+
+            <div class="form-grid">
+
+                <label>
+                    Schedule Name
+                    <input name="name"
+                           required
+                           placeholder="Business Hours">
+                </label>
+
+            </div>
+
+            <div class="schedule-days">
+
+                {% for day in [
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday'
+                ] %}
+
+                <div class="schedule-day">
+
+                    <strong>{{ day|capitalize }}</strong>
+
+                    <label>
+                        <input type="checkbox"
+                               name="{{ day }}_closed"
+                               data-schedule-closed="{{ day }}"
+                               checked
+                               onchange="toggleScheduleDay('{{ day }}', this.checked)">
+                        Closed
+                    </label>
+
+                    <label>
+                        Start
+                        <input type="text"
+                               name="{{ day }}_start"
+                               data-schedule-start="{{ day }}"
+                               value="08:00"
+                               placeholder="08:00"
+                               pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00"
+                               disabled>
+                    </label>
+
+                    <label>
+                        End
+                        <input type="text"
+                               name="{{ day }}_end"
+                               data-schedule-end="{{ day }}"
+                               value="17:00"
+                               placeholder="17:00"
+                               pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00"
+                               disabled>
+                    </label>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="empty-state">
+
+                <span class="empty-check">i</span>
+
+                <div>
+                    <strong>Schedule behavior</strong>
+                    <p>
+                        A day can be Closed or have one continuous availability
+                        period. Overnight periods are supported. Use 24:00 for
+                        midnight at the end of a day.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="add-schedule-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Add Schedule
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="modal"
+     id="edit-schedule-modal"
+     aria-hidden="true">
+
+    <div class="modal-backdrop"
+         data-close-modal="edit-schedule-modal">
+    </div>
+
+    <div class="modal-panel">
+
+        <div class="modal-heading">
+
+            <div>
+                <h2>Edit Availability Schedule</h2>
+                <p>Update the expected online period for each day.</p>
+            </div>
+
+            <button class="modal-close"
+                    type="button"
+                    data-close-modal="edit-schedule-modal">
+                ×
+            </button>
+
+        </div>
+
+        <form method="post"
+              id="edit-schedule-form"
+              action="">
+
+            <div class="form-grid">
+
+                <label>
+                    Schedule Name
+                    <input name="name"
+                           id="edit-schedule-name"
+                           required>
+                </label>
+
+            </div>
+
+            <div class="schedule-days">
+
+                {% for day in [
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday'
+                ] %}
+
+                <div class="schedule-day">
+
+                    <strong>{{ day|capitalize }}</strong>
+
+                    <label>
+                        <input type="checkbox"
+                               name="{{ day }}_closed"
+                               id="edit-{{ day }}-closed"
+                               onchange="toggleScheduleDay('edit-{{ day }}', this.checked)">
+                        Closed
+                    </label>
+
+                    <label>
+                        Start
+                        <input type="text"
+                               name="{{ day }}_start"
+                               id="edit-{{ day }}-start"
+                               placeholder="08:00"
+                               pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00">
+                    </label>
+
+                    <label>
+                        End
+                        <input type="text"
+                               name="{{ day }}_end"
+                               id="edit-{{ day }}-end"
+                               placeholder="17:00"
+                               pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00">
+                    </label>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="empty-state">
+
+                <span class="empty-check">i</span>
+
+                <div>
+                    <strong>Schedule behavior</strong>
+                    <p>
+                        A day can be Closed or have one continuous availability
+                        period. Overnight periods are supported. Use 24:00 for
+                        midnight at the end of a day.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="button"
+                        type="button"
+                        data-close-modal="edit-schedule-modal">
+                    Cancel
+                </button>
+
+                <button class="button button-primary"
+                        type="submit">
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="modal"
      id="add-network-modal"
      aria-hidden="true">
 
@@ -2032,6 +2521,29 @@
                     </select>
                 </label>
 
+                <label>
+                    Availability Schedule
+                    <select name="schedule_id">
+
+                        <option value="">
+                            Always Online
+                        </option>
+
+                        {% for schedule in schedules %}
+
+                        <option value="{{ schedule.id }}">
+                            {{ schedule.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <small>
+                        Defines when this device is expected to be online.
+                    </small>
+                </label>
+
             </div>
 
             <div class="form-checks">
@@ -2153,6 +2665,30 @@
                         </option>
 
                     </select>
+                </label>
+
+                <label>
+                    Availability Schedule
+                    <select name="schedule_id"
+                            id="edit-schedule">
+
+                        <option value="">
+                            Always Online
+                        </option>
+
+                        {% for schedule in schedules %}
+
+                        <option value="{{ schedule.id }}">
+                            {{ schedule.name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <small>
+                        Defines when this device is expected to be online.
+                    </small>
                 </label>
 
             </div>
@@ -2363,6 +2899,11 @@ document.querySelectorAll('[data-edit-device]').forEach(function (button) {
             device.monitoring_mode;
 
         document.getElementById(
+            'edit-schedule'
+        ).value =
+            device.schedule_id || '';
+
+        document.getElementById(
             'edit-ping'
         ).checked =
             device.ping;
@@ -2389,6 +2930,158 @@ document.querySelectorAll('[data-edit-device]').forEach(function (button) {
     });
 
 });
+
+
+function toggleScheduleDay(day, closed) {
+
+    const start =
+        document.querySelector(
+            '[data-schedule-start="' + day + '"]'
+        ) ||
+        document.getElementById(
+            'edit-' + day + '-start'
+        );
+
+    const end =
+        document.querySelector(
+            '[data-schedule-end="' + day + '"]'
+        ) ||
+        document.getElementById(
+            'edit-' + day + '-end'
+        );
+
+    if (start) {
+        start.disabled = closed;
+        start.required = !closed;
+    }
+
+    if (end) {
+        end.disabled = closed;
+        end.required = !closed;
+    }
+
+}
+
+
+document.querySelectorAll(
+    '[data-schedule-closed]'
+).forEach(
+    function (checkbox) {
+
+        toggleScheduleDay(
+            checkbox.dataset.scheduleClosed,
+            checkbox.checked
+        );
+
+    }
+);
+
+
+document.querySelectorAll(
+    '[data-edit-schedule]'
+).forEach(
+    function (button) {
+
+        button.addEventListener(
+            'click',
+            function () {
+
+                const schedule =
+                    JSON.parse(
+                        button.dataset.editSchedule
+                    );
+
+                document.getElementById(
+                    'edit-schedule-form'
+                ).action =
+                    '/configuration/schedules/' +
+                    schedule.id +
+                    '/edit';
+
+                document.getElementById(
+                    'edit-schedule-name'
+                ).value =
+                    schedule.name;
+
+                [
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday'
+                ].forEach(
+                    function (day) {
+
+                        const period =
+                            schedule.days &&
+                            schedule.days[day]
+                                ? schedule.days[day]
+                                : null;
+
+                        const closed =
+                            document.getElementById(
+                                'edit-' + day + '-closed'
+                            );
+
+                        const start =
+                            document.getElementById(
+                                'edit-' + day + '-start'
+                            );
+
+                        const end =
+                            document.getElementById(
+                                'edit-' + day + '-end'
+                            );
+
+                        closed.checked =
+                            !period;
+
+                        start.value =
+                            period
+                                ? period.start
+                                : '';
+
+                        end.value =
+                            period
+                                ? period.end
+                                : '';
+
+                        start.disabled =
+                            !period;
+
+                        end.disabled =
+                            !period;
+
+                        start.required =
+                            !!period;
+
+                        end.required =
+                            !!period;
+
+                    }
+                );
+
+                const modal =
+                    document.getElementById(
+                        'edit-schedule-modal'
+                    );
+
+                modal.classList.add(
+                    'modal-open'
+                );
+
+                modal.setAttribute(
+                    'aria-hidden',
+                    'false'
+                );
+
+            }
+        );
+
+    }
+);
 
 
 const speedTestForm =

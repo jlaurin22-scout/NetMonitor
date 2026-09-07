@@ -200,6 +200,37 @@ def get_current_status():
     return rows
 
 
+def get_latest_event(job_name):
+
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            id,
+            timestamp,
+            job_name,
+            job_type,
+            state,
+            message
+        FROM events
+        WHERE job_name = ?
+        ORDER BY id DESC
+        LIMIT 1
+    """,
+    (
+        job_name,
+    ))
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row
+
+
 def get_recent_events(limit=50):
 
     conn = sqlite3.connect(DB)
