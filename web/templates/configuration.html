@@ -2934,21 +2934,26 @@ document.querySelectorAll('[data-edit-device]').forEach(function (button) {
 
 function toggleScheduleDay(day, closed) {
 
+    const isEdit =
+        day.indexOf('edit-') === 0;
+
     const start =
-        document.querySelector(
-            '[data-schedule-start="' + day + '"]'
-        ) ||
-        document.getElementById(
-            'edit-' + day + '-start'
-        );
+        isEdit
+            ? document.getElementById(
+                day + '-start'
+            )
+            : document.querySelector(
+                '[data-schedule-start="' + day + '"]'
+            );
 
     const end =
-        document.querySelector(
-            '[data-schedule-end="' + day + '"]'
-        ) ||
-        document.getElementById(
-            'edit-' + day + '-end'
-        );
+        isEdit
+            ? document.getElementById(
+                day + '-end'
+            )
+            : document.querySelector(
+                '[data-schedule-end="' + day + '"]'
+            );
 
     if (start) {
         start.disabled = closed;
