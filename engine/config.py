@@ -778,40 +778,47 @@ def get_device_expected_online(
         #
         if period["end"] == "24:00":
 
-            return current >= start
+            if current >= start:
+                return True
 
-        end = datetime.strptime(
-            period["end"],
-            "%H:%M"
-        ).time()
+        else:
 
-        #
-        # Normal same-day period.
-        #
-        if start <= end:
+            end = datetime.strptime(
+                period["end"],
+                "%H:%M"
+            ).time()
 
-            return (
-                current >= start
-                and
-                current < end
-            )
+            #
+            # Normal same-day period.
+            #
+            if start <= end:
 
-        #
-        # Overnight period.
-        #
-        # Example:
-        # 18:00 -> 02:00
-        #
-        return (
-            current >= start
-            or
-            current < end
-        )
+                if (
+                    current >= start
+                    and
+                    current < end
+                ):
+                    return True
+
+            #
+            # Overnight period.
+            #
+            # Example:
+            # 18:00 -> 02:00
+            #
+            else:
+
+                if (
+                    current >= start
+                    or
+                    current < end
+                ):
+                    return True
 
     #
-    # If the current day has no availability period,
-    # check whether the previous day has an overnight
-    # period that continues into the current day.
+    # The current day's own period may not cover the
+    # current time, but the previous day's overnight
+    # period can still carry availability into today.
     #
     day_index = SCHEDULE_DAYS.index(
         day
