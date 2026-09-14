@@ -97,28 +97,11 @@
             Network Analysis
         </div>
 
-        <div class="health-panel">
-
-            <div>
-
-                <div class="panel-label">
-                    Overall Health
-                </div>
-
-                <div class="health-value">
-
-                    <span class="health-label">
-                        {{ report.health }}
-                    </span>
-
-                </div>
-
-            </div>
-
+        <div class="analysis-graph">
+            {{ report.core_network_graph|safe }}
         </div>
 
     </section>
-
 
     {% if report.executive_summary.headline %}
 

@@ -1732,3 +1732,15 @@ body {
     }
 
 }
+
+
+.analysis-graph {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.analysis-graph svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}

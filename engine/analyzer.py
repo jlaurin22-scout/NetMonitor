@@ -9,6 +9,7 @@ from engine.analysis.findings import build_findings
 from engine.analysis.report import create_report
 from engine.analysis.reliability import calculate_reliability
 from engine.analysis.ranking import rank_findings
+from engine.analysis.chart import build_core_network_graph
 
 MAJOR_OUTAGE_THRESHOLD = 10
 
@@ -45,5 +46,9 @@ def analyze():
     calculate_reliability(report)
 
     build_summary(report)
-    
+
+    report["core_network_graph"] = build_core_network_graph(
+        get_recent_events(5000)
+    )
+
     return report
