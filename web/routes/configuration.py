@@ -184,10 +184,25 @@ def _device_rows():
             "UNKNOWN"
         )
 
+        schedule_id = device.get(
+            "schedule_id"
+        )
+
+        schedule = (
+            config.get_schedule(schedule_id)
+            if schedule_id is not None
+            else None
+        )
+
         rows.append(
             {
                 "id": device["id"],
-                "schedule_id": device.get("schedule_id"),
+                "schedule_id": schedule_id,
+                "schedule_name": (
+                    schedule["name"]
+                    if schedule is not None
+                    else "Always Online"
+                ),
                 "name": device["name"],
                 "ip": device["ip"],
                 "network_id": network_id,
@@ -1781,6 +1796,106 @@ def edit_device(device_id):
             url_for(
                 "configuration.devices",
                 error=str(e)
+            )
+        )
+
+
+@configuration.route(
+    "/devices/set-schedule-selected",
+    methods=["POST"]
+)
+@admin_required
+def set_schedule_selected_devices():
+
+    selected = request.form.getlist(
+        "device_id"
+    )
+
+    schedule_value = request.form.get(
+        "schedule_id",
+        ""
+    ).strip()
+
+    if not selected:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error="No devices selected."
+            )
+        )
+
+    try:
+
+        schedule_id = (
+            int(schedule_value)
+            if schedule_value
+            else None
+        )
+
+        changed = config.set_devices_schedule(
+            selected,
+            schedule_id
+        )
+
+        schedule = (
+            config.get_schedule(schedule_id)
+            if schedule_id is not None
+            else None
+        )
+
+        schedule_name = (
+            schedule["name"]
+            if schedule is not None
+            else "Always Online"
+        )
+
+        set_restart_reason(
+            "Device Availability Schedule Updated",
+            (
+                f"{len(changed)} selected device"
+                f"{'s' if len(changed) != 1 else ''} "
+                f"set to {schedule_name}"
+            )
+        )
+
+        restarted = _restart_monitoring()
+
+        if not restarted:
+
+            try:
+
+                from engine.notify import clear_restart_reason
+
+                clear_restart_reason()
+
+            except Exception:
+                pass
+
+        message = (
+            f"{len(changed)} device"
+            f"{'s' if len(changed) != 1 else ''} "
+            f"set to {schedule_name}."
+            if restarted
+            else
+            f"{len(changed)} device"
+            f"{'s' if len(changed) != 1 else ''} saved with "
+            f"{schedule_name}. Restart NetMonitor to apply the change."
+        )
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                message=message
+            )
+        )
+
+    except Exception as e:
+
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error=f"Could not update selected devices: {e}"
             )
         )
 

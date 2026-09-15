@@ -1027,6 +1027,38 @@ body {
 
 }
 
+.device-bulk-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+
+    margin-bottom: 16px;
+
+}
+
+.device-bulk-actions label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-right: auto;
+
+}
+
+.device-bulk-actions select {
+
+    min-width: 190px;
+
+}
+
 .configuration-table-wrap {
 
     overflow-x: auto;
@@ -1731,16 +1763,4 @@ body {
 
     }
 
-}
-
-
-.analysis-graph {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.analysis-graph svg {
-    display: block;
-    width: 100%;
-    height: auto;
 }

@@ -856,7 +856,35 @@
                     Delete Selected
                 </button>
 
+                <select id="bulk-schedule-select"
+                        aria-label="Availability schedule">
+                    <option value="">Always Online</option>
+                    {% for schedule in schedules %}
+                    <option value="{{ schedule.id }}">
+                        {{ schedule.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <button class="button button-secondary"
+                        type="button"
+                        id="apply-selected-schedule"
+                        disabled>
+                    Apply Schedule
+                </button>
+
             </div>
+
+        </form>
+
+        <form method="post"
+              action="{{ url_for('configuration.set_schedule_selected_devices') }}"
+              id="mass-schedule-form"
+              onsubmit="return confirmMassSchedule();">
+
+            <input type="hidden"
+                   name="schedule_id"
+                   id="mass-schedule-id">
 
         </form>
 
@@ -916,6 +944,7 @@
                             <th>Name</th>
                             <th>IP Address</th>
                             <th>Mode</th>
+                            <th>Schedule</th>
                             <th>Checks</th>
                             <th>Status</th>
                             <th></th>
@@ -950,6 +979,10 @@
                                 <span class="mode-badge mode-{{ device.monitoring_mode }}">
                                     {{ device.monitoring_label }}
                                 </span>
+                            </td>
+
+                            <td>
+                                {{ device.schedule_name }}
                             </td>
 
                             <td>
@@ -3214,6 +3247,16 @@ const deleteSelectedDevices =
         'delete-selected-devices'
     );
 
+const applySelectedSchedule =
+    document.getElementById(
+        'apply-selected-schedule'
+    );
+
+const bulkScheduleSelect =
+    document.getElementById(
+        'bulk-schedule-select'
+    );
+
 
 function updateDeviceSelection() {
 
@@ -3225,6 +3268,13 @@ function updateDeviceSelection() {
     if (deleteSelectedDevices) {
 
         deleteSelectedDevices.disabled =
+            selected.length === 0;
+
+    }
+
+    if (applySelectedSchedule) {
+
+        applySelectedSchedule.disabled =
             selected.length === 0;
 
     }
@@ -3276,6 +3326,111 @@ deviceCheckboxes.forEach(
 
     }
 );
+
+
+if (applySelectedSchedule) {
+
+    applySelectedSchedule.addEventListener(
+        'click',
+        function () {
+
+            const form =
+                document.getElementById(
+                    'mass-schedule-form'
+                );
+
+            const scheduleId =
+                document.getElementById(
+                    'mass-schedule-id'
+                );
+
+            if (!form || !scheduleId) {
+                return;
+            }
+
+            scheduleId.value =
+                bulkScheduleSelect.value;
+
+            form.requestSubmit();
+
+        }
+    );
+
+}
+
+
+function confirmMassSchedule() {
+
+    const selected =
+        document.querySelectorAll(
+            '.device-select:checked'
+        );
+
+    if (selected.length === 0) {
+
+        return false;
+
+    }
+
+    const form =
+        document.getElementById(
+            'mass-schedule-form'
+        );
+
+    const scheduleSelect =
+        document.getElementById(
+            'bulk-schedule-select'
+        );
+
+    if (!form || !scheduleSelect) {
+
+        return false;
+
+    }
+
+    form.querySelectorAll(
+        'input[name="device_id"]'
+    ).forEach(
+        function (input) {
+
+            input.remove();
+
+        }
+    );
+
+    selected.forEach(
+        function (checkbox) {
+
+            const input =
+                document.createElement(
+                    'input'
+                );
+
+            input.type = 'hidden';
+            input.name = 'device_id';
+            input.value = checkbox.value;
+
+            form.appendChild(input);
+
+        }
+    );
+
+    const scheduleName =
+        scheduleSelect.options[
+            scheduleSelect.selectedIndex
+        ].text.trim();
+
+    return confirm(
+        'Apply "' +
+        scheduleName +
+        '" to ' +
+        selected.length +
+        ' selected device' +
+        (selected.length === 1 ? '' : 's') +
+        '?'
+    );
+
+}
 
 
 function confirmMassDelete() {

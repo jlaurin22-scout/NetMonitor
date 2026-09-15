@@ -860,6 +860,67 @@ def get_device_expected_online(
 
     return current < previous_end
 
+def set_devices_schedule(
+    device_ids,
+    schedule_id
+):
+
+    data = load_devices()
+
+    if schedule_id is not None:
+
+        schedule = get_schedule(
+            schedule_id
+        )
+
+        if schedule is None:
+
+            raise Exception(
+                "Availability schedule not found"
+            )
+
+    device_id_set = {
+        int(device_id)
+        for device_id in device_ids
+    }
+
+    if not device_id_set:
+
+        raise Exception(
+            "No devices selected"
+        )
+
+    changed = []
+
+    for device in data["devices"]:
+
+        if device["id"] not in device_id_set:
+            continue
+
+        if schedule_id is None:
+
+            device.pop(
+                "schedule_id",
+                None
+            )
+
+        else:
+
+            device["schedule_id"] = schedule_id
+
+        changed.append(device)
+
+    if len(changed) != len(device_id_set):
+
+        raise Exception(
+            "One or more selected devices were not found"
+        )
+
+    save_devices(data)
+
+    return changed
+
+
 def set_device_schedule(
     device_id,
     schedule_id
