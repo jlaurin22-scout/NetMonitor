@@ -1,6 +1,6 @@
-from engine.database import get_incidents, get_recent_events
+from engine.database import get_incidents
 
-from engine.config import get_devices, get_networks
+from engine.config import get_devices, load_customer
 
 from engine.analysis.health import calculate_health
 from engine.analysis.summary import build_summary
@@ -12,6 +12,7 @@ from engine.analysis.ranking import rank_findings
 from engine.analysis.chart import build_core_network_graph
 
 MAJOR_OUTAGE_THRESHOLD = 10
+
 
 def analyze():
 
@@ -28,9 +29,9 @@ def analyze():
         incidents,
         len(get_devices())
     )
-    
+
     report["incidents"] = incidents
-    
+
     build_statistics(
         report,
         incidents,
@@ -47,9 +48,10 @@ def analyze():
 
     build_summary(report)
 
+    customer = load_customer()
+
     report["core_network_graph"] = build_core_network_graph(
-        get_recent_events(5000),
-        get_networks()
+        incidents
     )
 
     return report

@@ -102,7 +102,7 @@ def _match_lane(job_type, job_name, networks):
 
 
 def build_core_network_graph(
-    incidents,
+    incidents=None,
     now=None
 ):
     """
@@ -112,6 +112,15 @@ def build_core_network_graph(
     objects and episode timestamps produced by the incident engine. No
     network type, device name, or development-site name is assumed.
     """
+
+    # Be tolerant of the older argument order used by some deployed copies.
+    # If the first positional argument was treated as `now`, it will be a list
+    # of incidents; in that case recover the intended arguments here.
+    if isinstance(now, (list, tuple)) and not isinstance(incidents, (list, tuple)):
+        incidents, now = now, incidents
+
+    if isinstance(incidents, dict):
+        incidents = [incidents]
 
     now = now or datetime.now()
     start = now - timedelta(days=7)
