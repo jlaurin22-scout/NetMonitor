@@ -100,27 +100,31 @@ def build_core_network_graph(
     now=None
 ):
     """
-    Render configured core-network event history as an inline SVG.
+    Render actual core-network monitoring events for this site.
 
-    Labels and lanes come from the site's configured networks.
-    Event markers come from the site's stored database events.
+    Rows are created only for gateway/internet/DNS jobs that actually
+    have events in the database. Labels come from the actual job names,
+    with configured network information used only to make gateway names
+    more descriptive. No fixed LAN/WAN/development-site rows are created.
     """
 
     networks = networks or []
     now = now or datetime.now()
     start = now - timedelta(days=7)
 
-    configured_lanes = _network_lanes(networks)
-    lane_keys = {
-        (network_id, job_type): index
-        for index, (network_id, job_type, _label) in enumerate(
-            configured_lanes
-        )
-    }
+    # Build a lookup for gateway names configured at this site.
+    gateway_networks = {}
 
-    points = []
+    for network in networks:
+        gateway_name = network.get("gateway_name")
+        if gateway_name:
+            gateway_networks[str(gateway_name)] = network.get(
+                "name"
+            )
 
-    for event in events:
+    raw_points = []
+
+    for event in events or []:
         job_type = str(
             _row_value(event, "job_type") or ""
         ).lower()
@@ -132,14 +136,14 @@ def build_core_network_graph(
         }:
             continue
 
-        ts = _timestamp(
+        timestamp = _timestamp(
             _row_value(event, "timestamp")
         )
 
         if (
-            ts is None
-            or ts < start
-            or ts > now
+            timestamp is None
+            or timestamp < start
+            or timestamp > now
         ):
             continue
 
@@ -148,33 +152,63 @@ def build_core_network_graph(
         ).upper()
 
         if state not in {
-            "DOWN",
-            "UP"
+            "UP",
+            "DOWN"
         }:
             continue
 
-        matched = _match_lane(
-            job_type,
-            _row_value(event, "job_name"),
-            networks
+        job_name = str(
+            _row_value(event, "job_name") or ""
         )
 
-        if matched is None:
+        if not job_name:
             continue
 
-        network_id, lane_type, label = matched
+        if job_type == "gateway":
+            network_name = gateway_networks.get(job_name)
 
-        lane_index = lane_keys.get(
-            (network_id, lane_type)
+            if network_name:
+                label = f"{network_name} — {job_name}"
+            else:
+                label = job_name
+        else:
+            # Internet/DNS job names are already generated from the
+            # configured network name, so preserve the site's name.
+            label = job_name
+
+        raw_points.append(
+            (
+                timestamp,
+                job_type,
+                job_name,
+                state,
+                label
+            )
         )
 
-        if lane_index is None:
-            continue
+    # Only rows represented by real events are displayed.
+    lane_names = []
+    lane_keys = set()
 
+    for _timestamp_value, _job_type, job_name, _state, label in raw_points:
+        key = (job_name, label)
+
+        if key not in lane_keys:
+            lane_keys.add(key)
+            lane_names.append(label)
+
+    lane_index = {
+        label: index
+        for index, label in enumerate(lane_names)
+    }
+
+    points = []
+
+    for timestamp, _job_type, _job_name, state, label in raw_points:
         points.append(
             (
-                ts,
-                lane_index,
+                timestamp,
+                lane_index[label],
                 state,
                 label
             )
@@ -184,53 +218,13 @@ def build_core_network_graph(
         key=lambda item: item[0]
     )
 
-    # Only show lanes that actually have events in this site's
-    # database. Do not create empty lanes merely because a network
-    # has a possible gateway/internet/dns configuration.
-    active_lane_keys = {
-        (network_id, lane_type)
-        for _ts, lane_index, _state, _label in points
-        for network_id, lane_type, _lane_label in [configured_lanes[lane_index]]
-    }
-
-    lanes = [
-        lane
-        for lane in configured_lanes
-        if (lane[0], lane[1]) in active_lane_keys
-    ]
-
-    lane_index_map = {
-        (network_id, lane_type): index
-        for index, (network_id, lane_type, _label) in enumerate(lanes)
-    }
-
-    remapped_points = []
-
-    for ts, old_lane_index, state, label in points:
-        network_id, lane_type, _old_label = configured_lanes[old_lane_index]
-        new_lane_index = lane_index_map.get(
-            (network_id, lane_type)
-        )
-
-        if new_lane_index is not None:
-            remapped_points.append(
-                (
-                    ts,
-                    new_lane_index,
-                    state,
-                    label
-                )
-            )
-
-    points = remapped_points
-
     width = 1200
     height = max(
         520,
-        120 + len(lanes) * 85
+        120 + len(lane_names) * 85
     )
 
-    # Reserve a dedicated label column outside the plotting area.
+    # Dedicated label column; the plotted data starts to the right.
     left = 300
     right = 25
     top = 70
@@ -244,38 +238,33 @@ def build_core_network_graph(
         (now - start).total_seconds()
     )
 
-    def xpos(ts):
+    def xpos(timestamp):
         return (
             left
             + (
-                (ts - start).total_seconds()
+                (timestamp - start).total_seconds()
                 / total_seconds
             )
             * plot_w
         )
 
-    if lanes:
+    if lane_names:
         lane_spacing = (
-            plot_h / max(1, len(lanes) - 1)
-            if len(lanes) > 1
+            plot_h / max(1, len(lane_names) - 1)
+            if len(lane_names) > 1
             else 0
         )
+
         lane_y = {
             index: (
                 top + lane_spacing * index
-                if len(lanes) > 1
+                if len(lane_names) > 1
                 else top + plot_h / 2
             )
-            for index in range(len(lanes))
+            for index in range(len(lane_names))
         }
     else:
         lane_y = {}
-
-    site_label = (
-        "Configured core network"
-        if lanes
-        else "No configured core-network monitors"
-    )
 
     svg = [
         (
@@ -285,14 +274,14 @@ def build_core_network_graph(
         ),
         '<rect width="100%" height="100%" fill="white"/>',
         (
-            f'<text x="{width / 2:.1f}" y="28" '
+            f'<text x="{width / 2:.1f}" y="25" '
             'text-anchor="middle" '
             'font-family="Arial, sans-serif" font-size="18" fill="#222">'
             'Core network events — past 7 days</text>'
         ),
     ]
 
-    for index, (_network_id, _job_type, label) in enumerate(lanes):
+    for index, label in enumerate(lane_names):
         yy = lane_y[index]
 
         svg.append(
@@ -308,7 +297,7 @@ def build_core_network_graph(
                 f'<text x="{left - 12}" y="{yy + 5:.1f}" '
                 'text-anchor="end" '
                 'font-family="Arial, sans-serif" font-size="12" fill="#222">'
-                f'{escape(str(label))}</text>'
+                f'{escape(label)}</text>'
             )
         )
 
@@ -343,9 +332,9 @@ def build_core_network_graph(
 
         tick += timedelta(days=1)
 
-    for ts, lane_index, state, label in points:
-        xx = xpos(ts)
-        yy = lane_y[lane_index]
+    for timestamp, index, state, label in points:
+        xx = xpos(timestamp)
+        yy = lane_y[index]
 
         color = (
             "#d9534f"
@@ -356,32 +345,31 @@ def build_core_network_graph(
         size = 5
 
         if state == "UP":
-            pts = (
+            polygon = (
                 f"{xx:.1f},{yy - size:.1f} "
                 f"{xx - size:.1f},{yy + size:.1f} "
                 f"{xx + size:.1f},{yy + size:.1f}"
             )
         else:
-            pts = (
+            polygon = (
                 f"{xx:.1f},{yy + size:.1f} "
                 f"{xx - size:.1f},{yy - size:.1f} "
                 f"{xx + size:.1f},{yy - size:.1f}"
             )
 
         title = (
-            f"{ts.strftime('%d %b %Y %H:%M:%S')} "
+            f"{timestamp.strftime('%d %b %Y %H:%M:%S')} "
             f"— {label} {state}"
         )
 
         svg.append(
             (
                 f'<g><title>{escape(title)}</title>'
-                f'<polygon points="{pts}" fill="{color}"/></g>'
+                f'<polygon points="{polygon}" fill="{color}"/></g>'
             )
         )
 
-    # Legend sits in the header area above the plotting area,
-    # completely clear of the event markers.
+    # Legend is in the header, completely outside the plotting area.
     lx = width - right - 125
     ly = 30
 

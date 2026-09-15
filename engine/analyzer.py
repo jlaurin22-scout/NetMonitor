@@ -1,6 +1,6 @@
 from engine.database import get_incidents, get_recent_events
 
-from engine.config import get_devices
+from engine.config import get_devices, get_networks
 
 from engine.analysis.health import calculate_health
 from engine.analysis.summary import build_summary
@@ -48,7 +48,8 @@ def analyze():
     build_summary(report)
 
     report["core_network_graph"] = build_core_network_graph(
-        get_recent_events(5000)
+        get_recent_events(5000),
+        get_networks()
     )
 
     return report
