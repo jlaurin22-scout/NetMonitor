@@ -15,13 +15,20 @@ def _row_value(row, key, default=None):
 def _timestamp(value):
     if isinstance(value, datetime):
         return value
-    try:
-        return datetime.strptime(
-            str(value),
-            "%Y-%m-%d %H:%M:%S"
-        )
-    except (TypeError, ValueError):
+    if value is None:
         return None
+    text = str(value).strip()
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%dT%H:%M:%S.%f",
+    ):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            pass
+    return None
 
 
 def _network_lanes(networks):
@@ -95,124 +102,84 @@ def _match_lane(job_type, job_name, networks):
 
 
 def build_core_network_graph(
-    events,
-    networks=None,
+    incidents,
     now=None
 ):
     """
-    Render actual core-network monitoring events for this site.
+    Render ALL visible Watchdog incidents from the past seven days.
 
-    Rows are created only for gateway/internet/DNS jobs that actually
-    have events in the database. Labels come from the actual job names,
-    with configured network information used only to make gateway names
-    more descriptive. No fixed LAN/WAN/development-site rows are created.
+    The graph is deliberately site-agnostic: it uses the actual incident
+    objects and episode timestamps produced by the incident engine. No
+    network type, device name, or development-site name is assumed.
     """
 
-    networks = networks or []
     now = now or datetime.now()
     start = now - timedelta(days=7)
 
-    # Build a lookup for gateway names configured at this site.
-    gateway_networks = {}
+    rows = []
 
-    for network in networks:
-        gateway_name = network.get("gateway_name")
-        if gateway_name:
-            gateway_networks[str(gateway_name)] = network.get(
-                "name"
-            )
+    for incident in incidents or []:
+        for episode in incident.get("episodes", []) or []:
+            object_name = episode.get("object")
+            if not object_name:
+                continue
 
-    raw_points = []
+            incident_start = _timestamp(episode.get("start"))
+            if incident_start is None:
+                continue
 
-    for event in events or []:
-        job_type = str(
-            _row_value(event, "job_type") or ""
-        ).lower()
+            incident_end = _timestamp(episode.get("end"))
 
-        if job_type not in {
-            "gateway",
-            "internet",
-            "dns"
-        }:
-            continue
+            # Include every incident episode that overlaps the seven-day window.
+            if incident_end is not None and incident_end < start:
+                continue
+            if incident_start > now:
+                continue
 
-        timestamp = _timestamp(
-            _row_value(event, "timestamp")
-        )
+            rows.append((str(object_name), incident_start, incident_end))
 
-        if (
-            timestamp is None
-            or timestamp < start
-            or timestamp > now
-        ):
-            continue
-
-        state = str(
-            _row_value(event, "state") or ""
-        ).upper()
-
-        if state not in {
-            "UP",
-            "DOWN"
-        }:
-            continue
-
-        job_name = str(
-            _row_value(event, "job_name") or ""
-        )
-
-        if not job_name:
-            continue
-
-        if job_type == "gateway":
-            network_name = gateway_networks.get(job_name)
-
-            if network_name:
-                label = f"{network_name} — {job_name}"
-            else:
-                label = job_name
-        else:
-            # Internet/DNS job names are already generated from the
-            # configured network name, so preserve the site's name.
-            label = job_name
-
-        raw_points.append(
-            (
-                timestamp,
-                job_type,
-                job_name,
-                state,
-                label
-            )
-        )
-
-    # Only rows represented by real events are displayed.
+    # One lane per actual incident object. Preserve first-seen order.
     lane_names = []
-    lane_keys = set()
+    seen = set()
 
-    for _timestamp_value, _job_type, job_name, _state, label in raw_points:
-        key = (job_name, label)
-
-        if key not in lane_keys:
-            lane_keys.add(key)
-            lane_names.append(label)
+    for object_name, _incident_start, _incident_end in rows:
+        if object_name not in seen:
+            seen.add(object_name)
+            lane_names.append(object_name)
 
     lane_index = {
-        label: index
-        for index, label in enumerate(lane_names)
+        name: index
+        for index, name in enumerate(lane_names)
     }
 
     points = []
 
-    for timestamp, _job_type, _job_name, state, label in raw_points:
+    for object_name, incident_start, incident_end in rows:
+        index = lane_index[object_name]
+
+        visible_start = max(
+            incident_start,
+            start
+        )
+
         points.append(
             (
-                timestamp,
-                lane_index[label],
-                state,
-                label
+                visible_start,
+                index,
+                "DOWN",
+                object_name
             )
         )
+
+        if incident_end is not None and incident_end <= now:
+            points.append(
+                (
+                    incident_end,
+                    index,
+                    "UP",
+                    object_name
+                )
+            )
 
     points.sort(
         key=lambda item: item[0]
@@ -221,10 +188,10 @@ def build_core_network_graph(
     width = 1200
     height = max(
         520,
-        120 + len(lane_names) * 85
+        120 + len(lane_names) * 40
     )
 
-    # Dedicated label column; the plotted data starts to the right.
+    # Dedicated label column. The plotted area starts well to the right.
     left = 300
     right = 25
     top = 70
@@ -238,11 +205,11 @@ def build_core_network_graph(
         (now - start).total_seconds()
     )
 
-    def xpos(timestamp):
+    def xpos(ts):
         return (
             left
             + (
-                (timestamp - start).total_seconds()
+                (ts - start).total_seconds()
                 / total_seconds
             )
             * plot_w
@@ -270,14 +237,14 @@ def build_core_network_graph(
         (
             f'<svg xmlns="http://www.w3.org/2000/svg" '
             f'viewBox="0 0 {width} {height}" '
-            'role="img" aria-label="Core network events for the past seven days">'
+            'role="img" aria-label="Watchdog incidents for the past seven days">'
         ),
         '<rect width="100%" height="100%" fill="white"/>',
         (
             f'<text x="{width / 2:.1f}" y="25" '
             'text-anchor="middle" '
             'font-family="Arial, sans-serif" font-size="18" fill="#222">'
-            'Core network events — past 7 days</text>'
+            'Watchdog incidents — past 7 days</text>'
         ),
     ]
 
@@ -332,8 +299,8 @@ def build_core_network_graph(
 
         tick += timedelta(days=1)
 
-    for timestamp, index, state, label in points:
-        xx = xpos(timestamp)
+    for ts, index, state, label in points:
+        xx = xpos(ts)
         yy = lane_y[index]
 
         color = (
@@ -345,31 +312,31 @@ def build_core_network_graph(
         size = 5
 
         if state == "UP":
-            polygon = (
+            pts = (
                 f"{xx:.1f},{yy - size:.1f} "
                 f"{xx - size:.1f},{yy + size:.1f} "
                 f"{xx + size:.1f},{yy + size:.1f}"
             )
         else:
-            polygon = (
+            pts = (
                 f"{xx:.1f},{yy + size:.1f} "
                 f"{xx - size:.1f},{yy - size:.1f} "
                 f"{xx + size:.1f},{yy - size:.1f}"
             )
 
         title = (
-            f"{timestamp.strftime('%d %b %Y %H:%M:%S')} "
+            f"{ts.strftime('%d %b %Y %H:%M:%S')} "
             f"— {label} {state}"
         )
 
         svg.append(
             (
                 f'<g><title>{escape(title)}</title>'
-                f'<polygon points="{polygon}" fill="{color}"/></g>'
+                f'<polygon points="{pts}" fill="{color}"/></g>'
             )
         )
 
-    # Legend is in the header, completely outside the plotting area.
+    # Legend is entirely outside the plotting area.
     lx = width - right - 125
     ly = 30
 
