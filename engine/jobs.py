@@ -6,7 +6,8 @@ from engine.config import get_device_expected_online
 
 from engine.network import (
     ping,
-    dns_lookup
+    dns_lookup,
+    tcp_connect
 )
 
 from engine.state import update
@@ -264,8 +265,9 @@ def run(job):
 
         for target in job["targets"]:
 
-            if ping(
+            if tcp_connect(
                 target,
+                443,
                 network
             ):
 

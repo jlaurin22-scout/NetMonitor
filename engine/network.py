@@ -198,6 +198,32 @@ def ping(host, network=None):
     return result.returncode == 0
 
 
+
+def tcp_connect(host, port=443, network=None):
+
+    import socket
+
+    source_ip = None
+
+    if network is not None:
+
+        source_ip = network["ip"]
+
+    try:
+
+        with socket.create_connection(
+            (host, port),
+            timeout=5,
+            source_address=(source_ip, 0) if source_ip else None
+        ):
+
+            return True
+
+    except Exception:
+
+        return False
+
+
 def dns_lookup(server, hostname, network=None):
 
     resolver = dns.resolver.Resolver(
