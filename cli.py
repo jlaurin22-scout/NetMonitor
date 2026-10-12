@@ -19,6 +19,7 @@ from commands.device.network import (
 from commands.device.edit import device_edit
 from commands.device.remove import device_remove
 from commands.device.scan import device_scan
+from commands.device.export import device_export
 from commands.events import (
     clear_events,
     events,
@@ -1297,7 +1298,7 @@ def main():
         if len(args) < 2:
 
             print(
-                "Usage: nm device scan|add|list|remove"
+                "Usage: nm device scan|add|list|remove|export [--output FILE]"
             )
             return
 
@@ -1324,6 +1325,11 @@ def main():
         if args[1] == "remove":
 
             device_remove()
+            return
+
+        if args[1] == "export":
+
+            device_export(args[2:])
             return
 
     print("Command not implemented yet.")
