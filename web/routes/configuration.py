@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 
+import csv
 import json
 import subprocess
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 
 from flask import (
     Blueprint,
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 
@@ -15,6 +20,7 @@ from engine import config
 from engine import database
 from engine.inventory import scanner
 from engine.notify import set_restart_reason
+from commands.device.export import CSV_FIELDS, _device_row
 
 from web.auth import admin_required
 
@@ -1278,6 +1284,44 @@ def internet_speedtest():
             url_for(
                 "configuration.internet",
                 error=str(e)
+            )
+        )
+
+
+@configuration.route("/devices/export")
+@admin_required
+def export_devices():
+    """Run a live discovery scan and download a fixed-name CSV export."""
+    try:
+        devices = scanner.scan()
+        exported_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        export_id = str(uuid.uuid4())
+
+        output_path = Path("/var/lib/netmonitor/netmonitor-inventory.csv")
+        with output_path.open("w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=CSV_FIELDS,
+                extrasaction="ignore",
+                lineterminator="\\n",
+            )
+            writer.writeheader()
+            for device in devices:
+                writer.writerow(_device_row(device, export_id, exported_at))
+
+        return send_file(
+            output_path,
+            mimetype="text/csv",
+            as_attachment=True,
+            download_name="netmonitor-inventory.csv",
+            max_age=0,
+        )
+
+    except Exception as e:
+        return redirect(
+            url_for(
+                "configuration.devices",
+                error=f"Device export failed: {e}"
             )
         )
 

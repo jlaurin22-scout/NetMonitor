@@ -802,6 +802,11 @@
 
             {% if current_user.role == 'admin' %}
 
+            <a class="button button-secondary"
+               href="{{ url_for('configuration.export_devices') }}">
+                Export Devices (CSV)
+            </a>
+
             <button class="button button-secondary"
                     type="button"
                     id="scan-network-button"
